@@ -1,0 +1,1 @@
+Testing data include data from Natural Earth project: http://www.naturalearthdata.com/

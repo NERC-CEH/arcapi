@@ -1,0 +1,268 @@
+"""
+#-------------------------------------------------------------------------------
+# Name:        arcapi_test
+# Purpose:     Tests for arcapi module.
+#
+# Author:      Filip Kral
+#
+# Created:     01/02/2014
+# Licence:     LGPL v3
+#-------------------------------------------------------------------------------
+# Most of the functions operate on potentially complex data, or require manual
+# checking of results, and therefore testing is rather difficult.
+#
+# Everybody is encouraged to contribute to tests.
+#-------------------------------------------------------------------------------
+"""
+
+import unittest
+import os
+import sys
+import arcpy
+import arcapi as ap
+
+class TestGlobalFunctions(unittest.TestCase):
+
+    def setUp(self):
+        # access testing data
+        self.testing_gdb = os.path.join(os.path.dirname(os.path.realpath(__file__)), r'testing\testing.gdb')
+        #self.t_table = os.path.join(self.testing_gdb, '\left_i_right')
+        #self.t_fc =  os.path.join(self.testing_gdb, 'left_i_right')
+        #self.t_cols = ('OBJECTID', 'Shape', 'CCARM2', 'POINT_X', u'POINT_Y', u'ROUND_X', 'ROUND_Y', 'name', 'propagatedName', 'fullName', 'GID', 'DOWNGID', 'HA_NUM','STRAHLER', 'SHREVE', 'OS_NAME', 'FNODE_FULL', 'TNODE_FULL', 'NAMENOXML', 'Shape_Length')
+        self.t_fc =  os.path.join(self.testing_gdb, 'ne_110m_admin_0_countries')
+        self.t_cols =  ('OBJECTID','Shape','ScaleRank','LabelRank','FeatureCla',
+                      'SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADMIN',
+                      'ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT',
+                      'SU_A3','NAME','ABBREV','POSTAL','NAME_FORMA','TERR_',
+                      'NAME_SORT','MAP_COLOR','POP_EST','GDP_MD_EST','FIPS_10_',
+                      'ISO_A2','ISO_A3','ISO_N3','Shape_Length','Shape_Area')
+        pass
+
+    def tearDown(self):
+        pass
+
+    def testnames(self):
+        est = map(str, tuple(ap.names(self.t_fc)))
+        obs = ('OBJECTID','Shape','ScaleRank','LabelRank','FeatureCla',
+                'SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADMIN',
+                'ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT',
+                'SU_A3','NAME','ABBREV','POSTAL','NAME_FORMA','TERR_',
+                'NAME_SORT','MAP_COLOR','POP_EST','GDP_MD_EST','FIPS_10_',
+                'ISO_A2','ISO_A3','ISO_N3','Shape_Length','Shape_Area')
+        self.assertEqual(tuple(est), obs)
+        pass
+
+    def testtypes(self):
+        est = map(str, tuple(ap.types(self.t_fc)))
+        obs = ('OID','Geometry','SmallInteger','SmallInteger','String','String',
+                'String','Single','Single','String','String','String','Single',
+                'String', 'String','Single','String','String','String','String',
+                'String','String', 'String','String','Single','Double','Double',
+                'Single','String','String', 'Single','Double','Double')
+        pass
+
+    def testnrow(self):
+        est = ap.nrow(self.t_fc)
+        obs = 177
+        self.assertEqual(est, obs)
+        pass
+
+##    def testvalues(self):
+##        pass
+##
+##    def testdistinct(self):
+##        pass
+
+    def testhead(self):
+        est = 5
+        hd = ap.head(self.t_fc, est, geoms = " ", verbose=False)
+        obs = len(hd[0])
+        self.assertEqual(est, obs)
+        pass
+
+    def testchart(self):
+        obs = r'c:\temp\chart.jpg'
+        t_fc = self.t_fc
+        est = ap.chart(t_fc, obs, texts = {'txt': 'Element txt'}, openit=False)
+        self.assertEqual(est, obs)
+        pass
+
+    def testplot(self):
+        pic = r'c:\temp\plot.png'
+        x = xrange(20)
+        ap.plot(x, out_file=pic, openit=False)
+        y = xrange(50,70)
+        ap.plot(x, y, pic, 'Main', 'X [m]', 'Y [m]', 'o', 'k', openit=False)
+        os.remove(pic)
+        with self.assertRaises(ap.ArcapiError):
+            ap.plot(x, [1,2,3], pic, 'Main', 'X [m]', 'Y [m]', 'o', 'k', openit=False)
+        pass
+
+    def testrename_col(self):
+        import arcpy
+        import tempfile
+        owo = arcpy.env.overwriteOutput
+        arcpy.env.overwriteOutput = True
+        tmpfc = os.path.join(tempfile.gettempdir(), "tmp")
+        tmpfc = arcpy.CopyFeatures_management(self.t_fc, tmpfc).getOutput(0)
+        est = ap.rename_col(tmpfc, "ABBREV", "ABBREVIATION")
+        obs = "ABBREVIATI"
+        arcpy.Delete_management(tmpfc)
+        arcpy.env.overwriteOutput = owo
+        self.assertEqual(est, obs)
+        pass
+
+    def testtlist_to_table(self):
+        ot = arcpy.CreateScratchName('tmp.dbf', workspace='c:\\temp')
+        colnames = ['NAME', 'POP_EST']
+        coltypes = ['TEXT', 'DOUBLE']
+        collengths = [250, '#']
+        coldefs = zip(colnames, coltypes, collengths)
+
+        # read data
+        tl = []
+        with arcpy.da.SearchCursor(self.t_fc, colnames) as sc:
+            for row in sc:
+                tl.append(tuple(row))
+
+        # write as table
+        ot = ap.tlist_to_table(tl, ot, coldefs, -9, 'nullText')
+        ap.head(ot)
+        est = int(arcpy.GetCount_management(ot).getOutput(0))
+        obs = int(arcpy.GetCount_management(self.t_fc).getOutput(0))
+
+        arcpy.Delete_management(ot)
+        self.assertEqual(est, obs)
+        pass
+
+##    def testdocu(self):
+##        pass
+
+    def testmeta(self):
+        fcws = 'c:\\temp'
+        fcnm = os.path.basename(arcpy.CreateScratchName('tmp.shp', workspace=fcws))
+
+        fc = arcpy.FeatureClassToFeatureClass_conversion(
+            self.t_fc,
+            fcws,
+            fcnm
+        ).getOutput(0)
+
+        ap.meta(fc, 'OVERWRITE', title="Bar")
+        ap.meta(fc, 'append', purpose='example', abstract='Column Spam means eggs')
+
+        ap.dlt(fc)
+        pass
+
+##    def testmsg(self):
+##        pass
+
+    def testfrequency(self):
+        est = ap.frequency([1,1,2,3,4,4,4])
+        obs = {1: 2, 2: 1, 3: 1, 4: 3}
+        samekeys = set(est.keys()) == set(obs.keys())
+        good = all([samekeys] + [est[i] == obs[i] for i in est])
+        self.assertTrue(good)
+        pass
+
+    def testlist_environments(self):
+        envs = ap.list_environments([])
+        self.assertEqual(len(envs), 50)
+        pass
+
+    def testoidF(self):
+        est = ap.oidF(self.t_fc)
+        obs = "OBJECTID"
+        self.assertEqual(str(est), obs)
+        pass
+
+    def testshpF(self):
+        est = ap.shpF(self.t_fc)
+        obs = "Shape"
+        self.assertEqual(str(est), obs)
+        pass
+
+    def testtstamp(self):
+        est = []
+        est.append(len(ap.tstamp()) == len('20140216184029'))
+        est.append(len(ap.tstamp("lr")) == len('lr20140216184045'))
+        est.append(len(ap.tstamp("lr", "%H%M%S")) == len('lr184045'))
+        est.append(len(ap.tstamp("lr", "%H%M%S")) == len('lr184045'))
+        est.append(len(ap.tstamp("lr", "%H%M%S", s=('run',1))) == len('lr184527_run_1'))
+        obs = [True, True, True, True, True]
+        self.assertEqual(est, obs)
+        pass
+
+    def testdlt(self):
+        est = []
+        wc = '"OBJECTID" < 11'
+        lr = arcpy.management.MakeFeatureLayer(self.t_fc, "lr", wc).getOutput(0)
+        # TODO: test for deleting layers won't pass even though ap.dlt works
+        #print lr
+        #print arcpy.Exists(lr)
+        tempfc = 'in_memory\\tmp'
+        if arcpy.Exists(tempfc):
+            arcpy.Delete_management(tempfc)
+        tmpfc = arcpy.CopyFeatures_management(lr, tempfc).getOutput(0)
+        fc = arcpy.CopyFeatures_management(tmpfc, arcpy.CreateScratchName("tmp.shp", workspace="c:\\temp")).getOutput(0)
+        ap.dlt(lr)
+        est.append(ap.dlt(tmpfc))
+        est.append(ap.dlt(fc))
+        est.append(ap.dlt('this does not exist'))
+        self.assertEquals(est, [True, True, False])
+        pass
+
+    def testcleanup(self):
+        x = []
+        out = arcpy.CreateScratchName("tmp", workspace=arcpy.env.scratchGDB)
+        x.append(arcpy.management.Copy(self.t_fc, out).getOutput(0))
+        est = ap.cleanup(x)
+        obs = 0
+        self.assertEqual(est, obs)
+
+    def testto_points(self):
+        obs = 10
+        wc = '"OBJECTID" < ' + str(obs + 1)
+        ofc = arcpy.CreateScratchName("tmp_out.shp", workspace="c:\\temp")
+        cs = 27700
+        ptfc = ap.to_points(self.t_fc, ofc, "POP_EST", "GDP_MD_EST", cs, w = wc)
+        est = int(arcpy.GetCount_management(ptfc).getOutput(0))
+        arcpy.Delete_management(ptfc)
+        self.assertEqual(est, obs)
+        pass
+
+
+##    def testwsp(self):
+##        pass
+##
+##    def testswsp(self):
+##        pass
+
+    def testto_scratch(self):
+        est = []
+        obs = []
+        arcpy.env.scratchWorkspace = arcpy.env.scratchGDB
+        s = arcpy.env.scratchWorkspace
+
+        est.append(ap.to_scratch('foo', 0))
+        obs.append(ap.os.path.join(s, 'foo'))
+        est.append(ap.to_scratch('foo', 1))
+        obs.append(os.path.join(s, 'foo0'))
+        est.append(ap.to_scratch('foo.shp', 0))
+        obs.append(os.path.join(s, 'foo_shp'))
+        est.append(ap.to_scratch('foo.shp', 1))
+        obs.append(os.path.join(s, 'foo_shp0'))
+
+        # not tested for file based workspaces
+        arcpy.env.scratchWorkspace = arcpy.env.scratchFolder
+        a = arcpy.env.scratchWorkspace
+        ap.to_scratch('foo', 0) == os.path.join(s, 'foo')
+        ap.to_scratch('foo', 1) == os.path.join(s, 'foo0')
+        ap.to_scratch('foo.shp', 0) == os.path.join(s, 'foo_shp')
+        ap.to_scratch('foo.shp', 1) == os.path.join(s, 'foo_shp0')
+
+        eq = all([ei == oi for ei,oi in zip(est, obs)])
+        self.assertTrue(eq)
+
+if __name__ == '__main__':
+    unittest.main(verbosity = 2)
