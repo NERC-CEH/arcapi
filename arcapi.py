@@ -37,6 +37,7 @@ import os
 import time
 import arcpy
 
+
 def version():
     """Return a 3-tuple indicating version of this module."""
     return (0,1,0)
@@ -142,7 +143,7 @@ def distinct(tbl, col, w=''):
     >>> distinct('c:\\foo\\bar.shp', "CATEGORY")
     >>> distinct('c:\\foo\\bar.shp', "SHAPE@XY")
     """
-    return list(set(values(tbl, col)))
+    return list(set(values(tbl, col, w)))  # the where clause parameter was not applied here
 
 
 def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, verbose=True, returnit = False):
@@ -1093,6 +1094,163 @@ def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
                     pass
                 print fulline
     return stats
+    
+def remap_sa(st, stop, step, n=1):
+    '''
+    Creates a spatial analyst format reclassify remap range (list)
+    [[start value, end value, new value]...]
+    
+    >>> # ex: make range groups from 50 - 80
+    >>> remap_sa(50, 80, 10)
+    [[50, 60, 1], [60, 70, 2], [70, 80, 3]]
+
+    st:   start value (int)
+    stop: stop value (int)
+    step: step value for range (int)
+    n:    new value interval, default is 1 (int)
+    '''
+    
+    tups = [[i,i+step] for i in range(st, stop, step)]
+    return [[t] + [(tups.index(t)+1)*n] for t in tups]
+   
+
+def remap_3d(st, stop, step, n=1):
+    '''
+    Creates a 3D analyst format reclassify remap range (str)
+    "start end new;..."
+    
+    >>> # ex: make range groups from 50 - 80 
+    >>> remap_3d(50, 80, 10)
+    '50 60 1;60 70 2;70 80 3'
+
+    st:   start value (int)
+    stop: stop value (int)
+    step: step value for range (int)
+    n:    new value interval, default is 1 (int)
+    '''
+    
+    tups = [[i,i+step] for i in range(st, stop, step)]
+    return ';'.join(' '.join([str(i) for i in t] + [str((tups.index(t)+1)*n)]) for t in tups)
+
+def find(pattern, path, sub_dirs=True):
+    import fnmatch
+    '''
+    Finds files matching a wild card pattern
+
+    >>> # Example: find SQL databases (.mdf files)
+    >>> find('*.mdf', r'\\ArcServer1\SDE')
+    \\arcserver1\SDE\ALBT\Albertville.mdf
+    \\arcserver1\SDE\ARLI\Arlington.mdf
+    \\arcserver1\SDE\BELL\BellePlaine.mdf
+    \\arcserver1\SDE\BGLK\BigLake.mdf
+    
+
+    pattern: wild card search (str)
+    path:    root directory to search
+    sub_dirs: option to search through all sub directories, default is True (bool)
+    '''
+    
+    theFiles = []
+    for path, dirs, files in os.walk(path):
+        for filename in files:
+            if fnmatch.fnmatch(filename, pattern):
+                theFiles.append(os.path.abspath(os.path.join(path, filename)))
+        if sub_dirs in [False, 'false', 0]:
+            break
+    return theFiles
+
+def convertIntegerToFloat(raster, out_raster, decimals):
+    import arcpy.sa as sa
+    '''
+    Converts an Integer Raster to a Float Raster
+    *** Requires spatial analyst extension ***
+
+    Example:   for a cell with a value of 45750, using this tool with 3
+    decimal places will give this cell a value of 45.750
+
+    raster:     input integer raster
+    out_raster: new float raster
+    decimals:   number of places to to move decimal for each cell
+    '''
+    
+    # check out license
+    arcpy.CheckOutExtension('Spatial')
+    fl_rast = sa.Float(arcpy.Raster(raster) / float(10**int(decimals)))
+    try:
+        fl_rast.save(out_raster)
+    except:
+        # having random issues with Esri GRID format, change to tiff
+        #   if grid file is created
+        if not arcpy.Exists(out_raster):
+            out_raster = out_raster.split('.')[0] + '.tif'
+            fl_rast.save(out_raster)
+    try:
+        arcpy.CalculateStatistics_management(out_raster)
+        arcpy.BuildPyramids_management(out_raster)
+    except:
+        pass
+    arcpy.AddMessage('Created: %s' %out_raster)
+    arcpy.CheckInExtension('Spatial')
+    return out_raster
+
+def fillNoDataValues(in_raster):
+    import arcpy.sa as sa
+    '''
+    Fills "NoData" cells with mean values from focal statistics
+
+    in_raster: input raster
+    '''
+
+    # Make Copy of Raster
+    _dir, name = os.path.split(in_raster)
+    temp = os.path.join(_dir, 'rast_copyxxx')
+    if arcpy.Exists(temp):
+        arcpy.Delete_management(temp)
+    arcpy.CopyRaster_management(in_raster, temp)
+
+    # Fill NoData
+    arcpy.CheckOutExtension('Spatial')
+    filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(3,3),'MEAN'),temp)
+    filled_rst = os.path.join(_dir, 'filled_rstxxx')
+    filled.save(filled_rst)
+    arcpy.BuildPyramids_management(filled_rst)
+    arcpy.CheckInExtension('Spatial')
+
+    # Delete original and replace
+    if arcpy.Exists(in_raster):
+        arcpy.Delete_management(in_raster)
+        arcpy.Rename_management(filled_rst, os.path.join(_dir, name))
+        arcpy.Delete_management(temp)
+    arcpy.AddMessage('Filled NoData Cells in: %s' %in_raster)
+    return in_raster
+
+def ConvertMetersToFeet(in_dem, out_raster):
+    '''
+    Converts DEM z units that are in meters to feet
+
+    in_dem: input dem
+    out_raster: new raster with z values as feet
+    '''
+    
+    arcpy.CheckOutExtension('Spatial')
+    out = arcpy.sa.Float(arcpy.sa.Times(arcpy.Raster(in_dem), 3.28084))
+    try:
+        out.save(out_raster)
+    except:
+        # having random issues with esri GRID format
+        #  will try to create as tiff if it fails
+        if not arcpy.Exists(out_raster):
+            out_raster = out_raster.split('.')[0] + '.tif'
+            out.save(out_raster)
+    try:
+        arcpy.CalculateStatistics_management(out_raster)
+        arcpy.BuildPyramids_management(out_raster)
+    except:
+        pass
+    arcpy.AddMessage('Created: %s' %out_raster)
+    arcpy.CheckInExtension('Spatial')
+    return out_raster
+
 
 
 class ArcapiError(Exception):
