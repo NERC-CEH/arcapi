@@ -3,7 +3,7 @@
 # Name:        arcapi
 # Purpose:     Convenient API for arcpy
 #
-# Author:      Filip Kral
+# Authors:     Filip Kral, Caleb Mackey
 #
 # Created:     01/02/2014
 # Licence:     LGPL v3
@@ -30,6 +30,14 @@
 # the calling functions.
 # In rare cases, to distinguish Exceptions raised in arcapi module, an Exception
 # of type arcapi.ArcapiError is raised.
+#
+# ArcGIS Extensions modules
+# -------------------------
+# Some functions use extensions modules (e.g. Spatial Analyst's arcpy.sa).
+# Bodies of these functions are wrapped in try-except(ImportError) statements.
+# The extension-dependent functions will return string if the extensions is not
+# installed, but rest of arcapi will still work normally.
+# 
 #-------------------------------------------------------------------------------
 """
 
@@ -40,7 +48,7 @@ import arcpy
 
 def version():
     """Return a 3-tuple indicating version of this module."""
-    return (0,1,0)
+    return (0,1,1)
 
 def names(x, filterer = None):
     """Return list of column names of a table.
@@ -1160,7 +1168,6 @@ def find(pattern, path, sub_dirs=True):
     return theFiles
 
 def convertIntegerToFloat(raster, out_raster, decimals):
-    import arcpy.sa as sa
     '''
     Converts an Integer Raster to a Float Raster
     *** Requires spatial analyst extension ***
@@ -1172,84 +1179,95 @@ def convertIntegerToFloat(raster, out_raster, decimals):
     out_raster: new float raster
     decimals:   number of places to to move decimal for each cell
     '''
-    
-    # check out license
-    arcpy.CheckOutExtension('Spatial')
-    fl_rast = sa.Float(arcpy.Raster(raster) / float(10**int(decimals)))
     try:
-        fl_rast.save(out_raster)
-    except:
-        # having random issues with Esri GRID format, change to tiff
-        #   if grid file is created
-        if not arcpy.Exists(out_raster):
-            out_raster = out_raster.split('.')[0] + '.tif'
+        import arcpy.sa as sa
+            
+        # check out license
+        arcpy.CheckOutExtension('Spatial')
+        fl_rast = sa.Float(arcpy.Raster(raster) / float(10**int(decimals)))
+        try:
             fl_rast.save(out_raster)
-    try:
-        arcpy.CalculateStatistics_management(out_raster)
-        arcpy.BuildPyramids_management(out_raster)
-    except:
-        pass
-    arcpy.AddMessage('Created: %s' %out_raster)
-    arcpy.CheckInExtension('Spatial')
-    return out_raster
+        except:
+            # having random issues with Esri GRID format, change to tiff
+            #   if grid file is created
+            if not arcpy.Exists(out_raster):
+                out_raster = out_raster.split('.')[0] + '.tif'
+                fl_rast.save(out_raster)
+        try:
+            arcpy.CalculateStatistics_management(out_raster)
+            arcpy.BuildPyramids_management(out_raster)
+        except:
+            pass
+        arcpy.AddMessage('Created: %s' %out_raster)
+        arcpy.CheckInExtension('Spatial')
+        return out_raster
+    except ImportError:
+        return 'Module arcpy.sa not found.'
 
 def fillNoDataValues(in_raster):
-    import arcpy.sa as sa
     '''
-    Fills "NoData" cells with mean values from focal statistics
+    Fills "NoData" cells with mean values from focal statistics.
+    *** Requires spatial analyst extension ***
 
     in_raster: input raster
     '''
+    try:
+        import arcpy.sa as sa
+        # Make Copy of Raster
+        _dir, name = os.path.split(in_raster)
+        temp = os.path.join(_dir, 'rast_copyxxx')
+        if arcpy.Exists(temp):
+            arcpy.Delete_management(temp)
+        arcpy.CopyRaster_management(in_raster, temp)
+    
+        # Fill NoData
+        arcpy.CheckOutExtension('Spatial')
+        filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(3,3),'MEAN'),temp)
+        filled_rst = os.path.join(_dir, 'filled_rstxxx')
+        filled.save(filled_rst)
+        arcpy.BuildPyramids_management(filled_rst)
+        arcpy.CheckInExtension('Spatial')
+    
+        # Delete original and replace
+        if arcpy.Exists(in_raster):
+            arcpy.Delete_management(in_raster)
+            arcpy.Rename_management(filled_rst, os.path.join(_dir, name))
+            arcpy.Delete_management(temp)
+        arcpy.AddMessage('Filled NoData Cells in: %s' %in_raster)
+        return in_raster
+    except ImportError:
+        return 'Module arcpy.sa not found.'
 
-    # Make Copy of Raster
-    _dir, name = os.path.split(in_raster)
-    temp = os.path.join(_dir, 'rast_copyxxx')
-    if arcpy.Exists(temp):
-        arcpy.Delete_management(temp)
-    arcpy.CopyRaster_management(in_raster, temp)
-
-    # Fill NoData
-    arcpy.CheckOutExtension('Spatial')
-    filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(3,3),'MEAN'),temp)
-    filled_rst = os.path.join(_dir, 'filled_rstxxx')
-    filled.save(filled_rst)
-    arcpy.BuildPyramids_management(filled_rst)
-    arcpy.CheckInExtension('Spatial')
-
-    # Delete original and replace
-    if arcpy.Exists(in_raster):
-        arcpy.Delete_management(in_raster)
-        arcpy.Rename_management(filled_rst, os.path.join(_dir, name))
-        arcpy.Delete_management(temp)
-    arcpy.AddMessage('Filled NoData Cells in: %s' %in_raster)
-    return in_raster
-
-def ConvertMetersToFeet(in_dem, out_raster):
+def convertMetersToFeet(in_dem, out_raster):
     '''
     Converts DEM z units that are in meters to feet
+    *** Requires spatial analyst extension ***
 
     in_dem: input dem
     out_raster: new raster with z values as feet
     '''
-    
-    arcpy.CheckOutExtension('Spatial')
-    out = arcpy.sa.Float(arcpy.sa.Times(arcpy.Raster(in_dem), 3.28084))
     try:
-        out.save(out_raster)
-    except:
-        # having random issues with esri GRID format
-        #  will try to create as tiff if it fails
-        if not arcpy.Exists(out_raster):
-            out_raster = out_raster.split('.')[0] + '.tif'
+        import arcpy.sa as sa
+        arcpy.CheckOutExtension('Spatial')
+        out = sa.Float(sa.Times(arcpy.Raster(in_dem), 3.28084))
+        try:
             out.save(out_raster)
-    try:
-        arcpy.CalculateStatistics_management(out_raster)
-        arcpy.BuildPyramids_management(out_raster)
-    except:
-        pass
-    arcpy.AddMessage('Created: %s' %out_raster)
-    arcpy.CheckInExtension('Spatial')
-    return out_raster
+        except:
+            # having random issues with esri GRID format
+            #  will try to create as tiff if it fails
+            if not arcpy.Exists(out_raster):
+                out_raster = out_raster.split('.')[0] + '.tif'
+                out.save(out_raster)
+        try:
+            arcpy.CalculateStatistics_management(out_raster)
+            arcpy.BuildPyramids_management(out_raster)
+        except:
+            pass
+        arcpy.AddMessage('Created: %s' %out_raster)
+        arcpy.CheckInExtension('Spatial')
+        return out_raster
+    except ImportError:
+        return 'Module arcpy.sa not found'
 
 
 
