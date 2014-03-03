@@ -25,7 +25,8 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def setUp(self):
         # access testing data
-        self.testing_gdb = os.path.join(os.path.dirname(os.path.realpath(__file__)), r'testing\testing.gdb')
+        self.testingfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testing')
+        self.testing_gdb = os.path.join(self.testingfolder, 'testing.gdb')
         #self.t_table = os.path.join(self.testing_gdb, '\left_i_right')
         #self.t_fc =  os.path.join(self.testing_gdb, 'left_i_right')
         #self.t_cols = ('OBJECTID', 'Shape', 'CCARM2', 'POINT_X', u'POINT_Y', u'ROUND_X', 'ROUND_Y', 'name', 'propagatedName', 'fullName', 'GID', 'DOWNGID', 'HA_NUM','STRAHLER', 'SHREVE', 'OS_NAME', 'FNODE_FULL', 'TNODE_FULL', 'NAMENOXML', 'Shape_Length')
@@ -263,6 +264,76 @@ class TestGlobalFunctions(unittest.TestCase):
 
         eq = all([ei == oi for ei,oi in zip(est, obs)])
         self.assertTrue(eq)
+
+    def testremap_sa(self):
+        est = []
+
+        remapped = ap.remap_3d(10,50,10)
+        est.append(remapped == '10 20 1;20 30 2;30 40 3;40 50 4')
+
+        remapped = ap.remap_3d(0,5,1)
+        est.append(remapped == '0 1 1;1 2 2;2 3 3;3 4 4;4 5 5')
+
+        remapped = ap.remap_3d(-10,10,5)
+        est.append(remapped == '-10 -5 1;-5 0 2;0 5 3;5 10 4')
+
+        remapped = ap.remap_3d(-10,10,-5)
+        est.append(remapped == '')
+
+        remapped = ap.remap_3d(10,-20,-7)
+        est.append(remapped == '10 3 1;3 -4 2;-4 -11 3;-11 -18 4;-18 -25 5')
+
+        self.assertTrue(all(est))
+
+    def testremap_3d(self):
+        est = []
+
+        remapped = ap.remap_sa(10,50,10)
+        ob = [[[10, 20], 1], [[20, 30], 2], [[30, 40], 3], [[40, 50], 4]]
+        est.append(remapped == ob)
+
+        remapped = ap.remap_sa(0,5,1)
+        ob = [[[0, 1], 1], [[1, 2], 2], [[2, 3], 3], [[3, 4], 4], [[4, 5], 5]]
+        est.append(remapped == ob)
+
+        remapped = ap.remap_sa(-10,10,5)
+        ob = [[[-10, -5], 1], [[-5, 0], 2], [[0, 5], 3], [[5, 10], 4]]
+        est.append(remapped == ob)
+
+        remapped = ap.remap_sa(-10,10,-5)
+        ob = []
+        est.append(remapped == ob)
+
+        remapped = ap.remap_sa(10,-20,-7)
+        ob = [
+            [[10, 3], 1], [[3, -4], 2], [[-4, -11], 3], [[-11, -18], 4],
+            [[-18, -25], 5]
+        ]
+        est.append(remapped == ob)
+
+        self.assertTrue(all(est))
+
+    def testfind(self):
+        self.testingfolder = r'C:\Users\filipkral\Documents\GitHub\arcapi\testing'
+        obs = [1, 5]
+        est = []
+        findings = ap.find('*.shp', self.testingfolder)
+        est.append(len(findings))
+        findings = ap.find('*110m*', self.testingfolder)
+        est.append(len(findings))
+        self.assertEqual(est, obs)
+
+    def testconvertIntegerToFloat(self):
+        #TODO
+        pass
+
+    def testfillNoDataValues(self):
+        #TODO
+        pass
+
+    def testconvertMetersToFeet(self):
+        #TODO
+        pass
 
 if __name__ == '__main__':
     unittest.main(verbosity = 2)
