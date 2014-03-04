@@ -1269,7 +1269,11 @@ def convertMetersToFeet(in_dem, out_raster):
     except ImportError:
         return 'Module arcpy.sa not found'
 
-
+def currentMxd():
+    """Return handle to the CURRENT map document.
+    ***Can be used only in ArcMap session***
+    """
+    return arcpy.mapping.MapDocument("CURRENT")
 
 class ArcapiError(Exception):
     """A type of exception raised from arcapi module"""
