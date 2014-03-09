@@ -37,11 +37,12 @@
 # Bodies of these functions are wrapped in try-except(ImportError) statements.
 # The extension-dependent functions will return string if the extensions is not
 # installed, but rest of arcapi will still work normally.
-# 
+#
 #-------------------------------------------------------------------------------
 """
 
 import os
+import sys
 import time
 import arcpy
 
@@ -585,7 +586,7 @@ def meta(datasource, mode="PREPEND", **args):
 
     # checks
     if xslt is None: xslt = os.path.join(arcpy.GetInstallInfo()['InstallDir'], 'Metadata\Stylesheets\gpTools\exact copy of.xslt')
-    if not os.path.isfile(xslt): raise Exception("Cannot find xslt file " + str(xslt))
+    if not os.path.isfile(xslt): raise ArcapiError("Cannot find xslt file " + str(xslt))
     mode = mode.upper()
 
     # work
@@ -609,7 +610,7 @@ def meta(datasource, mode="PREPEND", **args):
             pparent = "/".join(p.split("/")[:-1])
             parent = tree.find(pparent)
             if parent is None:
-                raise Exception("Could not found %s as parent of %s in medatata for %s" % (pparent, p, str(datasource)))
+                raise ArcapiError("Could not found %s as parent of %s in medatata for %s" % (pparent, p, str(datasource)))
             subel = ET.SubElement(parent, p.split("/")[-1])
             subel.text = ''
             el = subel
@@ -641,7 +642,7 @@ def meta(datasource, mode="PREPEND", **args):
 
     return r.getOutput(0)
 
-def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None):
+def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None, level='message'):
     """Print (and optionally log) a message using print and arcpy.AddMessage.
 
     In python console, arcpy.AddMessage does not work but print does.
@@ -649,6 +650,9 @@ def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None):
     In geoprocessing windows, print does not work but arcpy.AddMessage does,
     A message like 'T:2014-02-16 20:44:35: foo' is printed.
     In Windows command line, both messages are printed.
+
+    arcpy.AddWarning is used if level is 'warning'
+    arcpy.AddError is used if level is 'error', sys.exit() is called then.
 
     If log file does not exist, it is created, otherwise message is appended.
 
@@ -659,6 +663,7 @@ def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None):
     timef -- time format, default is "%Y-%m-%d %H:%M:%S" (YYYY-MM-DD HH:MM:SS)
     verbose -- if True (default) print the message to the console
     log -- file to append the message to, the default is None (i.e. no appending)
+    level -- one of 'message'|'warning'|'error' or 0|1|2 respectively
 
     Example:
     >>> msg('foo') # P:2014-02-16 20:44:35: foo
@@ -666,13 +671,32 @@ def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None):
     >>> msg('foo', '%H%M%S', True, 'c:\\temp\\log.txt') # P:204531: foo
     """
     x = str(x)
+    level = str(level).lower()
+    doexit = False
     tstamp = time.strftime(timef, time.localtime())
     if verbose:
-        arcpy.AddMessage("T:" + tstamp + ": " + x)
-        print("P:" + tstamp + ": " + x)
+        m = tstamp + ": " + x
+        if level in ('message', '0'):
+            print("P:" + m)
+            arcpy.AddMessage("T:" + m)
+        elif level in ('warning', '1'):
+            print("W:" + m)
+            arcpy.AddWarning("T:" + m)
+        elif level in ('error', '2'):
+            print("E:" + m)
+            arcpy.AddError("T:" + m)
+            doexit = True
+        else:
+            em = "Level %s not in 'message'|'warning'|'error'|0|1|2." % (level)
+            raise ArcapiError(em)
+
     if log not in ("", None):
         with open(log, "a") as fl:
             fl.write("P:" + tstamp + ": " + x + "\n")
+
+    if doexit:
+        try: sys.exit()
+        except: pass
 
 def list_environments(x=[], printit=False):
     """Return a list of 2-tuples of all arcgis environments.
@@ -1102,12 +1126,12 @@ def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
                     pass
                 print fulline
     return stats
-    
+
 def remap_sa(st, stop, step, n=1):
     '''
     Creates a spatial analyst format reclassify remap range (list)
     [[start value, end value, new value]...]
-    
+
     >>> # ex: make range groups from 50 - 80
     >>> remap_sa(50, 80, 10)
     [[50, 60, 1], [60, 70, 2], [70, 80, 3]]
@@ -1117,17 +1141,17 @@ def remap_sa(st, stop, step, n=1):
     step: step value for range (int)
     n:    new value interval, default is 1 (int)
     '''
-    
+
     tups = [[i,i+step] for i in range(st, stop, step)]
     return [[t] + [(tups.index(t)+1)*n] for t in tups]
-   
+
 
 def remap_3d(st, stop, step, n=1):
     '''
     Creates a 3D analyst format reclassify remap range (str)
     "start end new;..."
-    
-    >>> # ex: make range groups from 50 - 80 
+
+    >>> # ex: make range groups from 50 - 80
     >>> remap_3d(50, 80, 10)
     '50 60 1;60 70 2;70 80 3'
 
@@ -1136,7 +1160,7 @@ def remap_3d(st, stop, step, n=1):
     step: step value for range (int)
     n:    new value interval, default is 1 (int)
     '''
-    
+
     tups = [[i,i+step] for i in range(st, stop, step)]
     return ';'.join(' '.join([str(i) for i in t] + [str((tups.index(t)+1)*n)]) for t in tups)
 
@@ -1151,13 +1175,13 @@ def find(pattern, path, sub_dirs=True):
     \\arcserver1\SDE\ARLI\Arlington.mdf
     \\arcserver1\SDE\BELL\BellePlaine.mdf
     \\arcserver1\SDE\BGLK\BigLake.mdf
-    
+
 
     pattern: wild card search (str)
     path:    root directory to search
     sub_dirs: option to search through all sub directories, default is True (bool)
     '''
-    
+
     theFiles = []
     for path, dirs, files in os.walk(path):
         for filename in files:
@@ -1181,7 +1205,7 @@ def convertIntegerToFloat(raster, out_raster, decimals):
     '''
     try:
         import arcpy.sa as sa
-            
+
         # check out license
         arcpy.CheckOutExtension('Spatial')
         fl_rast = sa.Float(arcpy.Raster(raster) / float(10**int(decimals)))
@@ -1219,7 +1243,7 @@ def fillNoDataValues(in_raster):
         if arcpy.Exists(temp):
             arcpy.Delete_management(temp)
         arcpy.CopyRaster_management(in_raster, temp)
-    
+
         # Fill NoData
         arcpy.CheckOutExtension('Spatial')
         filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(3,3),'MEAN'),temp)
@@ -1227,7 +1251,7 @@ def fillNoDataValues(in_raster):
         filled.save(filled_rst)
         arcpy.BuildPyramids_management(filled_rst)
         arcpy.CheckInExtension('Spatial')
-    
+
         # Delete original and replace
         if arcpy.Exists(in_raster):
             arcpy.Delete_management(in_raster)
