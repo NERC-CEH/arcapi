@@ -99,6 +99,24 @@ class TestGlobalFunctions(unittest.TestCase):
             ap.plot(x, [1,2,3], pic, 'Main', 'X [m]', 'Y [m]', 'o', 'k', openit=False)
         pass
 
+    def testhist(self):
+        pic = r'c:\temp\plot.png'
+        x = xrange(20)
+        h = ap.hist(x, out_file=pic, openit=False)
+        h = ap.hist(x, pic, main='Main', xlab='Xlbl', log=True, openit=False)
+        os.remove(pic)
+        self.assertFalse(os.path.exists(pic))
+
+    def testbars(self):
+        pic = r'c:\temp\plot.png'
+        x = xrange(20)
+        ap.bars(x, out_file=pic, openit=False)
+        y = xrange(50,70)
+        ap.bars(x, out_file=pic, labels=y, main='Main', xlab='X', ylab='Y', openit=False)
+        ap.bars([], openit=False)
+        os.remove(pic)
+        self.assertFalse(os.path.exists(pic))
+
     def testrename_col(self):
         import arcpy
         import tempfile

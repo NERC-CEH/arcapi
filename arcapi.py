@@ -375,9 +375,7 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     """
     Create and display a plot (PNG) showing x (and y).
 
-    Utilizes matplotlib's plotting functions.
-    In later versions of arcapi, plotting functions should be more flexible,
-    more along the lines of R's plot function.
+    Uses matplotlib.pyplot.scatter.
 
     Required:
     x -- values to plot on x axis
@@ -390,10 +388,10 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     xlab -- label for x axis
     ylab -- label for y axis
     pch
-    color -- color for matplotlib, default is 'r' for red, can also be:
-        b: blue, g: green, c: cyan, m: magenta, y: yellow, k: black, w: white
-        or hexadecimal code like '#eeefff', or shades of grey as '0.75',
-        or a 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
+    color -- color of points:
+        'r': red (default), 'b': blue, 'g': green, 'c': cyan, 'm': magenta,
+        'y': yellow, 'k': black, 'w': white, hexadecimal code like '#eeefff',
+        shades of grey as '0.75', 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
     pch -- character for matplotlib plot marks, default is '+', can also be:
         +: plus sign, .: dot, o: circle, *: star, p: pentagon, s:square, x: X,
         D: diamond, h: hexagon, ^: triangle
@@ -428,6 +426,163 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     if openit:
         import webbrowser
         webbrowser.open_new_tab("file://" + out_file)
+    return
+
+def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
+    """
+    Create and display a plot (PNG) showing histogram of x and return computed
+    histogram of values, breaks, and patches.
+
+    Uses matplotlib.pyplot.hist, for details see help(matplotlib.pyplot.hist).
+    Draws an empty plot if x is empty.
+
+    Required:
+    x -- Input data (not empty!); histogram is computed over the flattened array.
+
+    Optional:
+    bins -- int or sequence of scalars defining the number of equal-width bins.
+        or the bin edges including the rightmost edge. Default is 10.
+    range -- (float, float), the lower and upper range of the bins,
+        default is (min(x), max(x))
+    normed -- counts normalized to form a probability density if True, default False
+    weights -- array_like array of weights for each element of x.
+    cumulative -- cumulative counts from left are calculated if True, default False
+    histtype -- 'bar'(default)|'barstacked'|'step'|'stepfilled'
+    align -- 'left'|'mid'(default)|'right' to align bars to bin edges.
+    orientation -- 'horizontal'(default)|'vertical'
+    rwidth -- relative width [0.0 to 1.0] of the bars, default is None (automatic)
+    log -- if True, empty bins are filtered out and log scale set; default False
+    color -- scalar or array-like, the colors of the bar faces:
+        'r': red (default), 'b': blue, 'g': green, 'c': cyan, 'm': magenta,
+        'y': yellow, 'k': black, 'w': white, hexadecimal code like '#eeefff',
+        shades of grey as '0.75', 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
+        Can also be full color and style specification.
+    label -- label for legend if x has multiple datasets
+    out_file -- path to output file, default is 'c:\\temp\\hist.png'
+    main -- string, histogram main title
+    xlab -- string, label for the ordinate (independent) axis
+    openit -- if True (default), exported figure is opened in a webbrowser
+
+    Example:
+    >>> x = numpy.random.randn(10000)
+    >>> hist(x)
+    >>> hist(x, bins=20, color='r', main='A Title", xlab='Example')
+    """
+    import matplotlib.pyplot as plt
+
+    # sort out parameters
+    extras =  ('main', 'xlab', 'ylab')
+    pars = dict([(k,v) for k,v in args.iteritems() if k not in extras])
+
+    h = plt.hist(x, **pars)
+
+    plt.title(str(args.get('main', 'Histogram')))
+    xlab = str(args.get('xlab', 'Value'))
+    ylab = 'Count'
+    if args.get('Density', False):
+        ylab = 'Density'
+
+    if args.get('orientation', 'horizontal') == 'vertical':
+        lab = xlab
+        xlab = ylab
+        ylab = lab
+
+    plt.xlabel(str(xlab))
+    plt.ylabel(str(ylab))
+    plt.savefig(out_file)
+    plt.close()
+    if openit:
+        import webbrowser
+        webbrowser.open_new_tab("file://" + out_file)
+    return h
+
+def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
+    """
+    Create and display a plot (PNG) showing barchart of x.
+
+    Uses matplotlib.plt.bar, draws an empty plot if x is empty.
+    Parameter width is always 1.0.
+
+    Use matplotlib colors for coloring;
+        'r': red, 'b': blue (default), 'g': green, 'c': cyan, 'm': magenta,
+        'y': yellow, 'k': black, 'w': white, hexadecimal code like '#eeefff',
+        shades of grey as '0.75', 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
+
+    Required:
+    x -- Input data. list-like of bar heights.
+
+    Optional:
+    color -- scalar or array-like, the colors of the bar faces
+    edgecolor -- scalar or array-like, the colors of the bar edges
+    linewidth -- scalar or array-like, default: None width of bar edge(s).
+        If None, use default linewidth; If 0, don't draw edges.
+    xerr -- scalar or array-like, use to generate errorbar(s) if not None (default)
+    yerr -- scalar or array-like, use to generate errorbar(s) if not None (default)
+    ecolor -- scalar or array-like, use as color of errorbar(s) if not None (default)
+    capsize -- integer, length of error bar caps in points, default: 3
+    orientation -- 'vertical'(default)|'horizontal', orientation of the bars
+    log -- boolean, set the axis to be log scale if True, default is False
+    # other
+    out_file -- path to output file, default is 'c:\\temp\\hist.png'
+    labels -- list-like of labels for each bar to display on x axis
+    main -- string, histogram main title
+    xlab -- string, label for the ordinate (independent) axis
+    openit -- if True (default), exported figure is opened in a webbrowser
+
+    Example:
+    >>> x = [1,2,3,4,5]
+    >>> lb = ['A','B','C','D','E']
+    >>> bars(x)
+    >>> bars(x, labels=lb, color='r', main='A Title', orientation='vertical')
+    """
+    import matplotlib.pyplot as plt
+    import numpy
+
+    width = 1.0
+    # unpack arguments
+    bpars = ['width', 'color', 'edgecolor', 'linewidth', 'xerr', 'yerr',
+    'ecolor', 'capsize','error_kw', 'orientation', 'log']
+    barpars = dict([(i, args.get(i, None)) for i in args if i in bpars])
+    barpars['align'] = 'center'
+    center = range(len(x))
+    labels = args.get('labels', center)
+    barpars['width'] = width
+    orientation = barpars.get('orientation', 'vertical')
+
+    fig, ax = plt.subplots()
+    fig.canvas.draw()
+
+    # the orientation parameter seems to have no effect on pyplot.bar, therefore
+    # it is handled by calling barh instead of bar if orientation is horizontal
+    if orientation == 'horizontal':
+        a = barpars.pop('width', None)
+        a = barpars.pop('orientation', None)
+        plt.barh(center, x, **barpars)
+    else:
+        plt.bar(center, x, **barpars)
+
+    xlab = str(args.get('xlab', 'Item'))
+    ylab = str(args.get('ylab', 'Value'))
+    if orientation == 'horizontal':
+        lab = xlab
+        xlab = ylab
+        ylab = lab
+        ax.set_yticks(center)
+        ax.set_yticklabels(labels)
+    else:
+        ax.set_xticks(center)
+        ax.set_xticklabels(labels)
+
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(str(ylab))
+    ax.set_title(str(args.get('main', 'Barplot')))
+    plt.savefig(out_file)
+    plt.close()
+    if openit:
+        import webbrowser
+        webbrowser.open_new_tab("file://" + out_file)
+
+    return
 
 def rename_col(tbl, col, newcol, alias = ''):
     """Rename column in table tbl and return the new name of the column.
