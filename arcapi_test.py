@@ -161,17 +161,20 @@ class TestGlobalFunctions(unittest.TestCase):
         fcws = 'c:\\temp'
         fcnm = os.path.basename(arcpy.CreateScratchName('tmp.shp', workspace=fcws))
 
+        # testing entries
+        ttl,pps,abt = "Bar","example", "Column Spam means eggs"
+
         fc = arcpy.FeatureClassToFeatureClass_conversion(
             self.t_fc,
             fcws,
             fcnm
         ).getOutput(0)
-
-        ap.meta(fc, 'OVERWRITE', title="Bar")
-        ap.meta(fc, 'append', purpose='example', abstract='Column Spam means eggs')
-
+        ap.meta(fc, 'OVERWRITE', title=ttl)
+        editted = ap.meta(fc, 'append', purpose=pps, abstract=abt)
+        editted = ap.meta(fc, 'overwrite', title=ttl, purpose=pps, abstract=abt)
+        retrieved = ap.meta(fc)
         ap.dlt(fc)
-        pass
+        self.assertEqual(set(editted.values()), set(retrieved.values()))
 
 ##    def testmsg(self):
 ##        pass

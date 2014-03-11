@@ -706,9 +706,11 @@ def docu(x, n = None):
     return
 
 def meta(datasource, mode="PREPEND", **args):
-    """Update metadata of ArcGIS Feature Class, Raster Dataset, Table, etc.
+    """Read/write metadata of ArcGIS Feature Class, Raster Dataset, Table, etc.
 
-    The following entries (XML elements) can be changed:
+    Returns a dictionary of all accessible (if readonly) or all editted entries.
+
+    The following entries (XML elements) can be read or updated:
     Title ("dataIdInfo/idCitation/resTitle")
     Purpose ("dataIdInfo/idPurp")
     Abstract ("dataIdInfo/idAbs")
@@ -729,20 +731,28 @@ def meta(datasource, mode="PREPEND", **args):
         title, string to use in Title
         purpose, string to use in Purpose
         abstract, string to use in Abstract
+        If no keyword argument is specifed, metadata are read only, not edited.
 
     Example:
     >>> fc = 'c:\\foo\\bar.shp'
+    >>> meta(fc) # reads existing entries
     >>> meta(fc, 'OVERWRITE', title="Bar") # updates title
     >>> meta(fc, 'append', purpose='example', abstract='Column Spam means eggs')
     """
     import xml.etree.ElementTree as ET
     xslt = None # could be exposed as a parameter to specify alternative xslt file
-    tmpmetadatafile = arcpy.CreateScratchName("tmpmetadatafile", workspace=arcpy.env.scratchFolder)
+    tmpmetadatafile = arcpy.CreateScratchName('tmpmetadatafile', workspace=arcpy.env.scratchFolder)
 
     # checks
     if xslt is None: xslt = os.path.join(arcpy.GetInstallInfo()['InstallDir'], 'Metadata\Stylesheets\gpTools\exact copy of.xslt')
     if not os.path.isfile(xslt): raise ArcapiError("Cannot find xslt file " + str(xslt))
     mode = mode.upper()
+
+    lut_name_by_node = {
+        'dataIdInfo/idCitation/resTitle': 'title',
+        'dataIdInfo/idPurp': 'purpose',
+        'dataIdInfo/idAbs': 'abstract'
+    }
 
     # work
     r = arcpy.XSLTransform_conversion(datasource, xslt, tmpmetadatafile)
@@ -751,36 +761,45 @@ def meta(datasource, mode="PREPEND", **args):
         mf = f.read()
     tree = ET.fromstring(mf)
 
+    # check if read-only access requested (no entries supplied)
+    readonly = True if len(args) == 0 else False
+    reader = {}
+    if readonly:
+        args = {'title':'', 'purpose':'', 'abstract': ''}
+
     # get what user wants to update
     entries = {}
-    if args.get("title", None) is not None: entries.update({"dataIdInfo/idCitation/resTitle": args.get("title")})
-    if args.get("purpose", None) is not None: entries.update({"dataIdInfo/idPurp": args.get("purpose")})
-    if args.get("abstract", None) is not None: entries.update({"dataIdInfo/idAbs": args.get("abstract")})
+    if args.get('title', None) is not None: entries.update({'dataIdInfo/idCitation/resTitle': args.get('title')})
+    if args.get('purpose', None) is not None: entries.update({'dataIdInfo/idPurp': args.get('purpose')})
+    if args.get('abstract', None) is not None: entries.update({'dataIdInfo/idAbs': args.get('abstract')})
 
     # update entries
     for p,t in entries.iteritems():
         el = tree.find(p)
         if el is None:
-            arcpy.AddWarning("Element " + str(p) + " not found in metadata, creating it from scratch.")
-            pparent = "/".join(p.split("/")[:-1])
-            parent = tree.find(pparent)
-            if parent is None:
-                raise ArcapiError("Could not found %s as parent of %s in medatata for %s" % (pparent, p, str(datasource)))
-            subel = ET.SubElement(parent, p.split("/")[-1])
-            subel.text = ''
-            el = subel
-            del subel
+            if not readonly:
+                arcpy.AddWarning("Element " + str(p) + " not found in metadata, creating it from scratch.")
+                pparent = "/".join(p.split("/")[:-1])
+                parent = tree.find(pparent)
+                if parent is None:
+                    raise ArcapiError("Could not found %s as parent of %s in medatata for %s" % (pparent, p, str(datasource)))
+                subel = ET.SubElement(parent, p.split("/")[-1])
+                subel.text = ''
+                el = subel
+                del subel
         else:
-            pre, mid, post = ("", "", "")
-            if mode != "OVERWRITE":
-                mid = '' if el.text is None else el.text # remember existing content if not overwrite
-                joiner = "&lt;br/&gt;"
-            else:
-                mid = str('' if t is None else t)
-                joiner = ''
-            if mode == "APPEND": post = str('' if t is None else t)
-            if mode == "PREPEND": pre = str('' if t is None else t)
-            el.text = joiner.join((pre, mid, post))
+            if not readonly:
+                pre, mid, post = ('', '', '')
+                if mode != "OVERWRITE":
+                    mid = '' if el.text is None else el.text # remember existing content if not overwrite
+                    joiner = '&lt;br/&gt;'
+                else:
+                    mid = str('' if t is None else t)
+                    joiner = ''
+                if mode == 'APPEND': post = str('' if t is None else t)
+                if mode == 'PREPEND': pre = str('' if t is None else t)
+                el.text = joiner.join((pre, mid, post))
+        reader.update({lut_name_by_node[p]: getattr(el, 'text', None)})
 
     # write a new xml file to be imported
     mf = ET.tostring(tree)
@@ -795,7 +814,7 @@ def meta(datasource, mode="PREPEND", **args):
     try: os.remove(tmpmetadatafile)
     except: pass
 
-    return r.getOutput(0)
+    return reader
 
 def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None, level='message'):
     """Print (and optionally log) a message using print and arcpy.AddMessage.
