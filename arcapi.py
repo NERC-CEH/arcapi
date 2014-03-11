@@ -1473,6 +1473,9 @@ rlyr = arcpy.management.MakeRasterLayer
 tviw = arcpy.management.MakeTableView
 tos = to_scratch
 wsps = swsp
+osj = os.path.join
+bname = os.path.basename
+dname = os.path.dirname
 
 
 def main():
