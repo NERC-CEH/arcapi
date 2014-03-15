@@ -678,9 +678,11 @@ def tlist_to_table(x, out_tbl, cols, nullNumber=None, nullText=None):
             if doReplace:
                 rw = list(rw)
                 if i in replaceNumbers:
-                    rw[i] = nullNumber
+                    if rw[i] is None:
+                        rw[i] = nullNumber
                 if i in replacesText:
-                    rw[i] = nullText
+                    if rw[i] is None:
+                        rw[i] = nullText
                 rw = tuple(rw)
             ic.insertRow(rw)
     return out_tbl
