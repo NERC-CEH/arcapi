@@ -68,9 +68,29 @@ class TestGlobalFunctions(unittest.TestCase):
         self.assertEqual(est, obs)
         pass
 
-##    def testvalues(self):
-##        pass
-##
+    def testvalues(self):
+
+        fc = self.t_fc
+        w = '"OBJECTID" < 11'
+
+        vals1 = ap.values(fc, 'Shape_Length', w)
+        vals2 = ap.values(fc, 'Shape_Length', w, 'Shape_Length ASC')
+        vals3 = ap.values(fc, 'SHAPE@XY', w)
+        vals4 = ap.values(fc, 'SHAPE@XY;Shape_Length', w, 'Shape_Length DESC')
+        est = all([len(vi) == 10 for vi in [vals1, vals2, vals3, vals4]])
+        self.assertTrue(est)
+
+    def testvalues_crosscolumns(self):
+        # the values function requires columns included in the o parameter
+        # to be included in the col parameter too, otherwise an invalid
+        # sql statement is generated.
+        fc = self.t_fc
+        w = '"OBJECTID" < 11'
+        with self.assertRaises(RuntimeError):
+            vals = ap.values(fc, 'SHAPE@XY', w, 'Shape_Length ASC')
+        pass
+
+
 ##    def testdistinct(self):
 ##        pass
 
@@ -132,11 +152,11 @@ class TestGlobalFunctions(unittest.TestCase):
         pass
 
     def testtlist_to_table(self):
-        ot = arcpy.CreateScratchName('tmp.dbf', workspace='c:\\temp')
         colnames = ['NAME', 'POP_EST']
         coltypes = ['TEXT', 'DOUBLE']
         collengths = [250, '#']
         coldefs = zip(colnames, coltypes, collengths)
+        coldefs2 = ['NAME:TEXT', 'POP_EST:DOUBLE']
 
         # read data
         tl = []
@@ -144,14 +164,19 @@ class TestGlobalFunctions(unittest.TestCase):
             for row in sc:
                 tl.append(tuple(row))
 
-        # write as table
+        # write as table using log column definition
+        ot = arcpy.CreateScratchName('tmp.dbf', workspace='c:\\temp')
         ot = ap.tlist_to_table(tl, ot, coldefs, -9, 'nullText')
-        ap.head(ot)
-        est = int(arcpy.GetCount_management(ot).getOutput(0))
+        est1 = int(arcpy.GetCount_management(ot).getOutput(0))
+
+        # write as table using short column definition
+        ot = arcpy.CreateScratchName('tmp.dbf', workspace='c:\\temp')
+        ot = ap.tlist_to_table(tl, ot, coldefs2, -9, 'nullText')
+        est2 = int(arcpy.GetCount_management(ot).getOutput(0))
         obs = int(arcpy.GetCount_management(self.t_fc).getOutput(0))
 
         arcpy.Delete_management(ot)
-        self.assertEqual(est, obs)
+        self.assertTrue(all((est1 == obs, est2 == obs)))
         pass
 
 ##    def testdocu(self):
@@ -159,7 +184,8 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testmeta(self):
         fcws = 'c:\\temp'
-        fcnm = os.path.basename(arcpy.CreateScratchName('tmp.shp', workspace=fcws))
+        tempshp = arcpy.CreateScratchName('tmp.dbf', workspace=fcws).replace('.dbf', '.shp')
+        fcnm = os.path.basename(tempshp)
 
         # testing entries
         ttl,pps,abt = "Bar","example", "Column Spam means eggs"
@@ -226,7 +252,8 @@ class TestGlobalFunctions(unittest.TestCase):
         if arcpy.Exists(tempfc):
             arcpy.Delete_management(tempfc)
         tmpfc = arcpy.CopyFeatures_management(lr, tempfc).getOutput(0)
-        fc = arcpy.CopyFeatures_management(tmpfc, arcpy.CreateScratchName("tmp.shp", workspace="c:\\temp")).getOutput(0)
+        tempshp = arcpy.CreateScratchName('tmp.dbf', workspace='c:\\temp').replace('.dbf', '.shp')
+        fc = arcpy.CopyFeatures_management(tmpfc, tempshp).getOutput(0)
         ap.dlt(lr)
         est.append(ap.dlt(tmpfc))
         est.append(ap.dlt(fc))
@@ -245,7 +272,7 @@ class TestGlobalFunctions(unittest.TestCase):
     def testto_points(self):
         obs = 10
         wc = '"OBJECTID" < ' + str(obs + 1)
-        ofc = arcpy.CreateScratchName("tmp_out.shp", workspace="c:\\temp")
+        ofc = arcpy.CreateScratchName("tmp_out.dbf", workspace="c:\\temp").replace('.dbf', '.shp')
         cs = 27700
         ptfc = ap.to_points(self.t_fc, ofc, "POP_EST", "GDP_MD_EST", cs, w = wc)
         est = int(arcpy.GetCount_management(ptfc).getOutput(0))

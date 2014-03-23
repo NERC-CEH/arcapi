@@ -97,24 +97,62 @@ def nrow(x):
 def values(tbl, col, w='', o=None):
     """Return a list of all values in column col in table tbl.
 
+    If col is a single column, returns a list of values, otherwise returns
+    a list of tuples of values where each tuple is one row.
+
+    Columns included in the o parameter must be included in the col parameter!
+
     Required:
     tbl -- input table or table view
-    col -- input column name as string
+    col -- input column name(s) as string or a list; valid options are:
+        col='colA'
+        col=['colA']
+        col=['colA', 'colB', 'colC']
+        col='colA,colB,colC'
+        col='colA;colB;colC'
 
     Optional:
     w -- where clause
-    o -- order by clause like '"OBJECTID" ASC, "Shape_Area" DESC'
+    o -- order by clause like '"OBJECTID" ASC, "Shape_Area" DESC',
+        default is None, which means order by object id if exists
 
     Example:
-    >>> values('c:\\foo\\bar.shp', "Shape_Lenght")
-    >>> values('c:\\foo\\bar.shp', "SHAPE@XY")
+    >>> values('c:\\foo\\bar.shp', 'Shape_Length')
+    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY')
+    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY;Shape_Length', 'Shape_Length ASC')
+    >>> # columns in 'o' must be in 'col', otherwise RuntimeError is raised:
+    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY', 'Shape_Length DESC') # Error!
     """
-    ret = []
+
+    # unpack column names
+    if isinstance(col, (list, tuple)):
+        cols = col
+    else:
+        separ = ';' if ';' in str(col) else ','
+        cols = col.split(separ)
+
+    # indicate whether one or more than one columns were specified
+    multicols = False
+    if len(cols) > 1:
+        multicols = True
+
+    # construct order by clause
     if o is not None:
         o = 'ORDER BY ' + str(o)
-    with arcpy.da.SearchCursor(tbl, [col], where_clause = w, sql_clause=(None, o)) as sc:
+    else:
+        oidname = getattr(arcpy.Describe(tbl), "OIDFieldName", None)
+        if oidname is not None:
+            o = 'ORDER BY ' + arcpy.AddFieldDelimiters(tbl, oidname) + ' ASC'
+
+    # retrieve values with search cursor
+    ret = []
+    with arcpy.da.SearchCursor(tbl, cols, where_clause = w, sql_clause=(None, o)) as sc:
         for row in sc:
-            ret.append(row[0])
+            if multicols:
+                ret.append(row)
+            else:
+                ret.append(row[0])
+
     return ret
 
 def frequency(x):
@@ -152,7 +190,7 @@ def distinct(tbl, col, w=''):
     >>> distinct('c:\\foo\\bar.shp', "CATEGORY")
     >>> distinct('c:\\foo\\bar.shp', "SHAPE@XY")
     """
-    return list(set(values(tbl, col, w)))  # the where clause parameter was not applied here
+    return list(set(values(tbl, col, w)))
 
 
 def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, verbose=True, returnit = False):
@@ -667,9 +705,10 @@ def tlist_to_table(x, out_tbl, cols, nullNumber=None, nullText=None):
     for f in cols:
         fname = f[0]
         ftype = f[1].upper()
+        flength = '#'
         if len(f) > 2:
             flength = int(f[2]) if str(f[2]).isdigit() else '#'
-        arcpy.AddField_management(out_tbl, fname, ftype, "#", "#", flength)
+        arcpy.AddField_management(out_tbl, fname, ftype, '#', '#', flength)
     # rewrite all tuples
     fields = [c[0] for c in cols]
 
