@@ -57,7 +57,7 @@ If you feel you have made significant contribution anywhere in arcapi files,
 please add yourself to the authors at the top of arcapi.
 By contributing to arcapi you are releasing the code under the [Lesser General Public License v3](http://choosealicense.com/licenses/lgpl-v3/).
 If you add a function, please add a test too.
-
+Read the [Contributing to OS guide](https://guides.github.com/overviews/os-contributing/) for more details.
 
 License
 -------
