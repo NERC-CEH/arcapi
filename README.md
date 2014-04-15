@@ -17,7 +17,7 @@ Download this repository, put its contents somewhere into python path, then:
 
 If you do not want to put it into your python path, then:
 
-    arcapipath = "c:\\path\\to\directory\\contating_arcapi_py"
+    arcapipath = "c:\\path\\to\\folder_containig__arcapi_folder"
     import sys
     sys.path.insert(0, arapipath)
     import arcapi as ap
