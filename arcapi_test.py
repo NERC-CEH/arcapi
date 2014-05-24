@@ -1,7 +1,7 @@
 """
 #-------------------------------------------------------------------------------
 # Name:        arcapi_test
-# Purpose:     Tests for arcapi.arcapi module.
+# Purpose:     Tests for arcapi module.
 #
 # Author:      Filip Kral
 #

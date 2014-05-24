@@ -15,8 +15,8 @@
 
 # import the usual module(s)
 import arcpy, sys, os
-# If you don't have arcapi in your path, you can add it like so:
-sys.path.insert(0, r'c:\path\to\folder_containig__arcapi_folder')
+# If you don't have arcapi.py in your path, you can add it like so:
+sys.path.insert(0, r'c:\path\to\directory\with_arcapi_dot_py')
 # import arcapi using the recommended alias
 import arcapi as ap
 
@@ -28,11 +28,12 @@ ap.wsp('c:\\temp\\base.gdb')
 # default scratch workspace too, call e.g.
 ap.swsp(ap.wsp())
 
-# We will work with the famous meuse dataset of soil properties from about
-# 150 points near river Meuse collected near city Stein in The Netherlands.
-# The meuse dataset can be downloaded from the Internet. You can download it
-# directly from Python using urllib2 and save it as a text file onto your
-# hard drive like so:
+# We will work with the famous meuse dataset of soil
+# properties from about 150 points near river Meuse
+# collected near city Stein in The Netherlands.
+# The meuse dataset can be downloaded from the Internet.
+# You can download it directly from Python using urllib2
+# and save it as a text file onto your hard drive like so:
 url= 'https://raw.github.com/filipkral/meuse/master/meuse.txt'
 text =  os.path.join(arcpy.env.scratchFolder, 'meuse.txt')
 import urllib2
@@ -41,15 +42,15 @@ with open(text, 'w') as tx:
     tx.write(ur.read())
 ur.close()
 
-# We have our data in a text file, which we need to import into ArcGIS native
-# format. We strongly recommend Esri File Geodatabase.
+# We have our data in a text file, which we need to import
+# into ArcGIS native format, ideally Esri File Geodatabase.
 # ap has short name tviw for arcpy.management.CreateTableView,
 # flyr and rlyr for CreateFeatureLayer and CreateRasterLayer.
 tb = ap.tviw(text, "tb")
 # check that the names and data types are what you would expect
 ap.names(tb)
 ap.types(tb)
-# or like this:
+# or maybe:
 zip(ap.names(tb), ap.types(tb))
 
 # It is point data so let's convert it to a point feature class.
@@ -90,8 +91,6 @@ ap.frequency(x)
 # Now plot zinc concentration for landuse 'W'
 z = ap.values(fc, 'zinc', '"landuse" = \'W\'', '"OBJECTID" ASC')
 ap.plot(z)
-# Arcapi now plots histograms too!
-ap.hist(z)
 # Show scatter plot of zinc against distance from the river
 # The 'order by' clause ensures values come in the same order
 d = ap.values(fc, 'dist_m', '"landuse" = \'W\'', '"OBJECTID" ASC')
@@ -117,13 +116,15 @@ ap.add_col(fc, 'luse', 'TEXT')
 # you will need to Reload Cache in Table Options.)
 ap.update_col_from_dict(fc, landuse2luse, 'luse', 'landuse')
 
-# So why didn't we use table join to do this? You could, especially if you
-# have Advanced license so you can use JoinFied_management. With Basic license,
-# it is much easier to use ap.update_col_from_dict, which is also pretty
-# fast on mederate-sized datasets thanks to the use of an update cursor.
+# So why didn't we use table join to do this?
+# You could, especially if you have Advanced
+# license so you can use JoinFied_management.
+# With Basic license, it is much easier to use
+# ap.update_col_from_dict, which is also pretty
+# fast with its update cursor.
 
 # Finally, make a note about this update to metadata of fc
 ap.meta(fc, 'APPEND', abstract='Updated at ' + ap.tstamp())
 
 # To list all functions available in arcapi and their help:
-help(ap.arcapi)
+help(ap)
