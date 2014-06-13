@@ -25,6 +25,7 @@ import arcpy
 __version__ = '0.2.1'
 """Version number of arcapi"""
 
+
 def names(x, filterer = None):
     """Return list of column names of a table.
 
@@ -40,6 +41,7 @@ def names(x, filterer = None):
     flds = arcpy.ListFields(x)
     if filterer is None: filterer = lambda a: True
     return [f.name for f in flds if filterer(f)]
+
 
 def types(x, filterer = None):
     """Return list of column types of a table.
@@ -57,6 +59,7 @@ def types(x, filterer = None):
     if filterer is None: filterer = lambda a: True
     return [f.type for f in flds if filterer(f)]
 
+
 def nrow(x):
     """Return number of rows in a table as integer.
 
@@ -67,6 +70,7 @@ def nrow(x):
     >>> nrow('c:\\foo\\bar.shp')
     """
     return int(arcpy.GetCount_management(x).getOutput(0))
+
 
 def values(tbl, col, w='', o=None):
     """Return a list of all values in column col in table tbl.
@@ -129,6 +133,7 @@ def values(tbl, col, w='', o=None):
 
     return ret
 
+
 def frequency(x):
     """Return a dict of counts of each value in iterable x.
 
@@ -144,11 +149,12 @@ def frequency(x):
     x.sort()
     fq = {}
     for i in x:
-        if fq.has_key(i):
+        if i in fq: #has_key deprecated in 3.x
             fq[i] += 1
         else:
             fq[i] = 1
     return fq
+
 
 def distinct(tbl, col, w=''):
     """Return a list of distinct values in column col in table tbl.
@@ -261,6 +267,7 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
     ret = "\n".join(sbuilder) if returnit else None
     return ret
 
+
 def head(tbl, n=10, t=True, delimiter="; ", geoms = None, w = "", verbose=True):
     """Return top rows of table tbl.
 
@@ -318,6 +325,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms = None, w = "", verbose=True):
         if verbose:
             print_tuples(hd, delim=delimiter, tbl=tbl, geoms=geoms, returnit=False)
     return [hd, fs]
+
 
 def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution=95, openit=True):
     """Create and open a map (JPG) showing x and return path to the figure path.
@@ -383,6 +391,7 @@ def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution
 
     return arcpy.Describe(out_file).catalogPath
 
+
 def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X", ylab="Y", pch="+", color="r", openit=True):
     """
     Create and display a plot (PNG) showing x (and y).
@@ -439,6 +448,7 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
         import webbrowser
         webbrowser.open_new_tab("file://" + out_file)
     return
+
 
 def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
     """
@@ -507,6 +517,7 @@ def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
         import webbrowser
         webbrowser.open_new_tab("file://" + out_file)
     return h
+
 
 def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
     """
@@ -595,6 +606,7 @@ def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
         webbrowser.open_new_tab("file://" + out_file)
 
     return
+
 
 def rename_col(tbl, col, newcol, alias = ''):
     """Rename column in table tbl and return the new name of the column.
@@ -700,6 +712,7 @@ def tlist_to_table(x, out_tbl, cols, nullNumber=None, nullText=None):
             ic.insertRow(rw)
     return out_tbl
 
+
 def docu(x, n = None):
     """Print x.__doc__ string of the argument line by line using Python's print.
 
@@ -719,6 +732,7 @@ def docu(x, n = None):
         j += 1
         if j == n: break
     return
+
 
 def meta(datasource, mode="PREPEND", **args):
     """Read/write metadata of ArcGIS Feature Class, Raster Dataset, Table, etc.
@@ -831,6 +845,7 @@ def meta(datasource, mode="PREPEND", **args):
 
     return reader
 
+
 def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None, level='message'):
     """Print (and optionally log) a message using print and arcpy.AddMessage.
 
@@ -887,6 +902,7 @@ def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None, level='message'):
         try: sys.exit()
         except: pass
 
+
 def list_environments(x=[], printit=False):
     """Return a list of 2-tuples of all arcgis environments.
 
@@ -910,13 +926,16 @@ def list_environments(x=[], printit=False):
         ret.append((en, env))
     return ret
 
+
 def oidF(table):
     """Return name of the object ID field in table table"""
     return arcpy.Describe(table).OIDFieldName
 
+
 def shpF(fc):
     """Return name of the Shape (Geometry) field in feature class fc"""
     return arcpy.Describe(fc).ShapeFieldName
+
 
 def tstamp(p = "", tf="%Y%m%d%H%M%S", d="_", m=False, s=()):
     """Returns time stamped string.
@@ -943,6 +962,7 @@ def tstamp(p = "", tf="%Y%m%d%H%M%S", d="_", m=False, s=()):
     if m: msg(stamp, "")
     return stamp
 
+
 def dlt(x):
     """arcpy.Delete_management(x) if arcpy.Exists(x).
 
@@ -953,6 +973,7 @@ def dlt(x):
         arcpy.Delete_management(x)
         deletted = True
     return deletted
+
 
 def cleanup(x, verbose=False, **args):
     """Delete items in x and return number of items that could not be deleted.
@@ -983,6 +1004,7 @@ def cleanup(x, verbose=False, **args):
             m = "Cleanup could not delete " + str(i)
         msg(m, args.get('timef', '%Y-%m-%d %H:%M:%S'), verbose, args.get('log', None))
     return cnt
+
 
 def to_points(tbl, out_fc, xcol, ycol, sr, zcol='#', w=''):
     """Convert table to point feature class, return path to the feature class.
@@ -1015,6 +1037,7 @@ def to_points(tbl, out_fc, xcol, ycol, sr, zcol='#', w=''):
     out_fc = arcpy.CopyFeatures_management(lr, out_fc).getOutput(0)
     dlt(lr)
     return (arcpy.Describe(out_fc).catalogPath)
+
 
 def update_col_from_dict(x, y, xcol, xidcol=None, xw='', na=None):
     """Update column in a table with values from a dictionary.
@@ -1125,6 +1148,7 @@ def to_scratch(name, enforce=False):
         nm = os.path.join(ws, nm)
     return nm
 
+
 def wsp(ws = None):
     """Get or set arcpy.env.workspace and return its path.
 
@@ -1153,6 +1177,7 @@ def wsp(ws = None):
             ws = arcpy.management.CreateFileGDB(os.path.dirname(ws), re.sub(".gdb", "", os.path.basename(ws), re.IGNORECASE), "CURRENT").getOutput(0)
         arcpy.env.workspace = ws
     return arcpy.env.workspace
+
 
 def swsp(ws = None):
     """Get or set arcpy.env.scratchWorkspace and return its path.
@@ -1184,6 +1209,7 @@ def swsp(ws = None):
             ws = arcpy.management.CreateFileGDB(os.path.dirname(ws), re.sub(".gdb", "", os.path.basename(ws), re.IGNORECASE), "CURRENT").getOutput(0)
         arcpy.env.scratchWorkspace = ws
     return arcpy.env.scratchWorkspace
+
 
 def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
     """Summary statistics about columns of a table.
@@ -1316,60 +1342,66 @@ def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
                 print fulline
     return stats
 
+
 def remap_sa(st, stop, step, n=1):
-    '''
-    Creates a spatial analyst format reclassify remap range (list)
+    """Create a spatial analyst format reclassify remap range (list)
     [[start value, end value, new value]...]
 
     >>> # ex: make range groups from 50 - 80
     >>> remap_sa(50, 80, 10)
     [[50, 60, 1], [60, 70, 2], [70, 80, 3]]
 
-    st:   start value (int)
-    stop: stop value (int)
-    step: step value for range (int)
-    n:    new value interval, default is 1 (int)
-    '''
+    st   -- start value (int)
+    stop -- stop value (int)
+    step -- step value for range (int)
+
+    Optional:
+    n -- new value interval, default is 1 (int)
+    """
 
     tups = [[i,i+step] for i in range(st, stop, step)]
     return [[t] + [(tups.index(t)+1)*n] for t in tups]
 
 
 def remap_3d(st, stop, step, n=1):
-    '''
-    Creates a 3D analyst format reclassify remap range (str)
+    """Create a 3D analyst format reclassify remap range (str)
     "start end new;..."
 
-    >>> # ex: make range groups from 50 - 80
+    Required:
+    st --   start value (int)
+    stop -- stop value (int)
+    step -- step value for range (int)
+
+    Optional:
+    n -- new value interval, default is 1 (int)
+
+    Example:
+    >>> # make range groups from 50 - 80
     >>> remap_3d(50, 80, 10)
     '50 60 1;60 70 2;70 80 3'
-
-    st:   start value (int)
-    stop: stop value (int)
-    step: step value for range (int)
-    n:    new value interval, default is 1 (int)
-    '''
+    """
 
     tups = [[i,i+step] for i in range(st, stop, step)]
     return ';'.join(' '.join([str(i) for i in t] + [str((tups.index(t)+1)*n)]) for t in tups)
 
-def find(pattern, path, sub_dirs=True):
-    import fnmatch
-    '''
-    Finds files matching a wild card pattern
 
-    >>> # Example: find SQL databases (.mdf files)
+def find(pattern, path, sub_dirs=True):
+    """Find files matching a wild card pattern.
+
+    Parameters:
+    pattern -- wild card search (str)
+    path -- root directory to search
+    sub_dirs -- search through all sub directories? default is True (bool)
+
+    Example:
+    >>> # find SQL databases (.mdf files)
     >>> find('*.mdf', r'\\ArcServer1\SDE')
     \\arcserver1\SDE\ALBT\Albertville.mdf
     \\arcserver1\SDE\ARLI\Arlington.mdf
     \\arcserver1\SDE\BELL\BellePlaine.mdf
     \\arcserver1\SDE\BGLK\BigLake.mdf
-
-
-    pattern: wild card search (str)
-    path:    root directory to search
-    sub_dirs: option to search through all sub directories, default is True (bool)
-    '''
+    """
+    import fnmatch
 
     theFiles = []
     for path, dirs, files in os.walk(path):
@@ -1380,18 +1412,22 @@ def find(pattern, path, sub_dirs=True):
             break
     return theFiles
 
-def convertIntegerToFloat(raster, out_raster, decimals):
-    '''
-    Converts an Integer Raster to a Float Raster
+
+def int_to_float(raster, out_raster, decimals):
+    """Convert an Integer Raster to a Float Raster
     *** Requires spatial analyst extension ***
 
-    Example:   for a cell with a value of 45750, using this tool with 3
+    E.g., for a cell with a value of 45750, using this tool with 3
     decimal places will give this cell a value of 45.750
 
-    raster:     input integer raster
-    out_raster: new float raster
-    decimals:   number of places to to move decimal for each cell
-    '''
+    Required:
+    raster -- input integer raster
+    out_raster -- new float raster
+    decimals -- number of places to to move decimal for each cell
+
+    Example:
+    >>> convertIntegerToFloat(r'C:\Temp\ndvi_int', r'C:\Temp\ndvi_float', 4)
+    """
     try:
         import arcpy.sa as sa
 
@@ -1411,19 +1447,32 @@ def convertIntegerToFloat(raster, out_raster, decimals):
             arcpy.BuildPyramids_management(out_raster)
         except:
             pass
-        arcpy.AddMessage('Created: %s' %out_raster)
+
+        msg('Created: %s' %out_raster)
         arcpy.CheckInExtension('Spatial')
         return out_raster
     except ImportError:
         return 'Module arcpy.sa not found.'
 
-def fillNoDataValues(in_raster):
-    '''
-    Fills "NoData" cells with mean values from focal statistics.
+
+def fill_no_data(in_raster, out_raster, w=5, h=5):
+    """Fill "NoData" cells with mean values from focal statistics.
+
+    Use a larger neighborhood for raster with large areas of no data cells.
+
     *** Requires spatial analyst extension ***
 
-    in_raster: input raster
-    '''
+    Required:
+    in_raster -- input raster
+    out_raster -- output raster
+
+    Optional:
+    w -- search radius width for focal stats (rectangle)
+    h -- search radius height for focal stats (rectangle)
+
+    Example:
+    >>> fill_no_data(r'C:\Temp\ndvi', r'C:\Temp\ndvi_filled', 10, 10)
+    """
     try:
         import arcpy.sa as sa
         # Make Copy of Raster
@@ -1451,18 +1500,24 @@ def fillNoDataValues(in_raster):
     except ImportError:
         return 'Module arcpy.sa not found.'
 
-def convertMetersToFeet(in_dem, out_raster):
-    '''
-    Converts DEM z units that are in meters to feet
+
+def meters_to_feet(in_dem, out_raster, factor=3.28084):
+    """Convert DEM Z units by a factor, default factor converts m -> ft.
     *** Requires spatial analyst extension ***
 
-    in_dem: input dem
-    out_raster: new raster with z values as feet
-    '''
+    Required:
+    in_dem -- input dem
+    out_raster -- new raster with z values as feet
+    factor -- number by which the input DEM is multiplied,
+        default is 3.28084 to convert metres to feet.
+
+    Example:
+    >>> meters_to_feet(r'C:\Temp\dem_m', r'C:\Temp\dem_ft')
+    """
     try:
         import arcpy.sa as sa
         arcpy.CheckOutExtension('Spatial')
-        out = sa.Float(sa.Times(arcpy.Raster(in_dem), 3.28084))
+        out = sa.Float(sa.Times(arcpy.Raster(in_dem), factor))
         try:
             out.save(out_raster)
         except:
@@ -1482,11 +1537,669 @@ def convertMetersToFeet(in_dem, out_raster):
     except ImportError:
         return 'Module arcpy.sa not found'
 
+
 def currentMxd():
     """Return handle to the CURRENT map document.
-    ***Can be used only in ArcMap session***
+    ***Can be used only in an ArcMap session***
     """
     return arcpy.mapping.MapDocument("CURRENT")
+
+
+def fixArgs(arg, arg_type=list):
+    """Fixe arguments from a script tool.
+
+    For example, when using a script tool with a multivalue parameter,
+    it comes in as "val_a;val_b;val_c".  This function can automatically
+    fix arguments based on the arg_type.
+    Another example is the boolean type returned from a script tool -
+    instead of True and False, it is returned as "true" and "false".
+
+    Required:
+    arg --  argument from script tool (arcpy.GetParameterAsText() or sys.argv[1]) (str)
+    arg_type -- type to convert argument from script tool parameter. Default is list.
+
+    Example:
+    >>> # example of list returned from script tool multiparameter argument
+    >>> arg = "val_a;val_b;val_c"
+    >>> fixArgs(arg, list)
+    ['val_a', 'val_b', 'val_c']
+    """
+    if arg_type == list:
+        if isinstance(arg, str):
+            # need to replace extra quotes for paths with spaces
+            # or anything else that has a space in it
+            return map(lambda a: a.replace("';'",";"), arg.split(';'))
+        else:
+            return list(arg)
+    if arg_type == float:
+        if arg != '#':
+            return float(arg)
+        else:
+            return ''
+    if arg_type == int:
+        return int(arg)
+    if arg_type == bool:
+        if str(arg).lower() == 'true' or arg == 1:
+            return True
+        else:
+            return False
+    if arg_type == str:
+        if arg in [None, '', '#']:
+            return ''
+    return arg
+
+
+def copy_schema(template, new, sr=''):
+    """Copy the schema (field definition) of a feature class or a table.
+
+    Required:
+    template -- template table or fc
+    new -- new output fc or table
+
+    Optional:
+    sr -- spatial reference (only applies if fc) If no sr
+          is defined, it will default to sr of template.
+
+    Example:
+    >>> copy_schema(r'C:\Temp\soils_city.shp', r'C:\Temp\soils_county.shp')
+    """
+    path, name = os.path.split(new)
+    desc = arcpy.Describe(template)
+    ftype = desc.dataType
+    if 'table' in ftype.lower():
+        arcpy.CreateTable_management(path, name, template)
+    else:
+        stype = desc.shapeType.upper()
+        sm = 'SAME_AS_TEMPLATE'
+        if not sr:
+            sr = desc.spatialReference
+        arcpy.CreateFeatureclass_management(path, name, stype, template, sm, sm, sr)
+    return new
+
+
+def make_poly_from_extent(ext, sr):
+    """Make an arcpy polygon object from an input extent object.,Returns
+    a polygon geometry object.
+
+    Required:
+    ext -- extent object
+    sr -- spatial reference
+
+    Example
+    >>> ext = arcpy.Describe(fc).extent
+    >>> sr = 4326  #WKID for WGS 84
+    >>> poly = make_poly_from_extent(ext, sr)
+    >>> arcpy.CopyFeatures_management(poly, r'C:\Temp\Project_boundary.shp')
+    """
+    array = arcpy.Array()
+    array.add(ext.lowerLeft)
+    array.add(ext.lowerRight)
+    array.add(ext.upperRight)
+    array.add(ext.upperLeft)
+    array.add(ext.lowerLeft)
+    return arcpy.Polygon(array, sr)
+
+
+def list_all_fcs(gdb, wild = '*', ftype='All', rel=False):
+    """Return a list of all feature classes in a geodatabase.
+
+    if rel is True, only relative paths will be returned.  If
+    false, the full path to each feature classs is returned
+    Relative path Example:
+
+    >>> # Return relative paths for fc
+    >>> gdb = r'C:\TEMP\test.gdb'
+    >>> for fc in getFCPaths(gdb, rel=True):
+    >>> print fc
+
+    Utilities\Storm_Mh
+    Utilities\Storm_Cb
+    Transportation\Roads
+
+
+    Required:
+    gdb -- geodatabase containing feature classes to be listed
+    wild -- wildcard for feature classes. Default is "*"
+    ftype -- feature class type. Default is 'All'
+             Valid values:
+
+             Annotation - Only annotation feature classes are returned.
+             Arc - Only arc (or line) feature classes are returned.
+             Dimension - Only dimension feature classes are returned.
+             Edge - Only edge feature classes are returned.
+             Junction - Only junction feature classes are returned.
+             Label - Only label feature classes are returned.
+             Line - Only line (or arc) feature classes are returned.
+             Multipatch - Only multipatch feature classes are returned.
+             Node - Only node feature classes are returned.
+             Point - Only point feature classes are returned.
+             Polygon - Only polygon feature classes are returned.
+             Polyline - Only line (or arc) feature classes are returned.
+             Region - Only region feature classes are returned.
+             Route - Only route feature classes are returned.
+             Tic - Only tic feature classes are returned.
+             All - All datasets in the workspace. This is the default value.
+
+    Optional:
+    rel -- option to have relative paths. Default is false;
+           will include full paths unless rel is set to True
+    """
+    # feature type (add all in case '' is returned
+    # from script tool
+    if not ftype:
+        ftype = 'All'
+    arcpy.env.workspace = gdb
+
+    # loop through feature classes
+    feats = []
+
+    # Add top level fc's (not in feature data sets)
+    feats += arcpy.ListFeatureClasses(wild, ftype)
+
+    # loop through feature datasets
+    for fd in arcpy.ListDatasets('*', 'Feature'):
+        arcpy.env.workspace = fdws = os.path.join(gdb, fd)
+        feats += [os.path.join(fd, fc) for fc in
+                  arcpy.ListFeatureClasses(wild, ftype)]
+
+    # return list of features, relative pathed or full pathed
+    if rel:
+        return sorted(feats)
+    else:
+        return sorted([os.path.join(gdb, ft) for ft in feats])
+
+
+def field_list(in_fc, filterer=[], oid=True, shape=True, objects=False):
+    """Return a list of fields or a list of field objects on input feature class.
+
+    This function will handle list comprehensions to either return field names
+    or field objects. Object ID and Geometry fields are omitted by default.
+
+    Required:
+    in_fc -- input feature class, feature layer,  table, or table view
+
+    Optional:
+    filterer -- Default is empty list.  If a list is passed in, it will list
+                all fields
+    oid -- Default is True.  If set to True, will list all fields
+           excluding Geometry and other Geometry. (bool)
+    shape -- Default is True.  If true will return the Geometry field (bool)
+    object -- Default is False.  If set to true, will return field objects
+              instead of field names allowing for access to field properties such as
+              field.name, field.type, field.length, etc. (bool)
+
+    Example:
+    >>> field_list(r'C:\Temp\Counties.shp', ['STATE_FIPS', 'COUNTY_CODE'], objects=True)
+    """
+
+    # add exclude types and exclude fields
+    ex_type = []
+    if not oid:
+        ex_type.append('OID')
+    if not shape:
+        ex_type.append('Geometry')
+    exclude = map(lambda x: x.lower(), filterer)
+
+    # return either field names or field objects
+    if objects:
+        return [f for f in arcpy.ListFields(in_fc)
+                      if f.type not in ex_type
+                      and f.name.lower() not in exclude]
+    else:
+        return [f.name.encode('utf-8') for f in arcpy.ListFields(in_fc)
+                      if f.type not in ex_type
+                      and f.name.lower() not in exclude]
+
+
+def get_field_type(in_field, fc=''):
+    """Converts esri field type returned from list fields or describe fields
+    to format for adding fields to tables.
+
+    Required:
+    in_field -- field name to find field type. If no feature class
+        is specified, the in_field paramter should be a describe of
+        a field.type
+
+    Optional:
+    fc -- feature class or table.  If no feature class is specified,
+        the in_field paramter should be a describe of a field.type
+
+    Example
+    >>> # field type of 'String' needs to be 'TEXT' to be added to table
+    >>> # This is a text type field
+    >>> # now get esri field type
+    >>> print getFieldType(table, 'PARCEL_ID') #esri field.type return is 'String', we want 'TEXT'
+    TEXT
+    """
+    if fc:
+        field = [f.type for f in arcpy.ListFields(fc) if f.name == in_field][0]
+    else:
+        field = in_field
+    if field in lut_field_types:
+        return lut_field_types[field]
+    else:
+        return None
+
+
+def match_field(table_or_list, pat, multi=False):
+    """Return a list of field objects where name matches the specified pattern.
+
+    Required:
+    table_or_list -- input table or feature class or list of fields
+    pat -- pattern to match to field
+
+    Optional:
+    multi: if True, will return a list of all matches,
+           otherwise returns the first match
+
+    Example:
+    >>> match_field(r'C:\Temp\Counties.shp', 'county_*', True)
+    ['COUNTY_CODE', 'COUNTY_FIPS']
+    """
+
+    import fnmatch
+
+    if isinstance(table_or_list, list):
+        fields = table_or_list
+    else:
+        fields = [f.name for f in arcpy.ListFields(table_or_list)]
+    all_mats = []
+    for f in fields:
+        if fnmatch.fnmatch(f, pat):
+            if not multi:
+                return f
+            else:
+                all_mats.append(f)
+    return all_mats
+
+def add_fields_from_table(in_tab, template, add_fields=[]):
+    """Add fields (schema only) from one table to another
+
+    Required:
+    in_tab -- input table
+    template -- template table containing fields to add to in_tab
+    add_fields -- fields from template table to add to input table (list)
+
+    Example:
+    >>> add_fields_from_table(parcels, permits, ['Permit_Num', 'Permit_Date'])
+    """
+
+    # fix args if args from script tool
+    if isinstance(add_fields, str):
+        add_fields = add_fields.split(';')
+
+    # grab field types
+    f_dict = dict((f.name, [get_field_type(f.type), f.length, f.aliasName]) for f in arcpy.ListFields(template))
+
+    # Add fields
+    for field in add_fields:
+        if field in f_dict:
+            f_ob = f_dict[field]
+            arcpy.AddField_management(in_tab, field, f_ob[0], field_length=f_ob[1], field_alias=f_ob[2])
+            msg('Added field: {0}'.format(field))
+    return
+
+
+def create_field_name(fc, new_field):
+    """Return a valid field name that does not exist in fc and
+    that is based on new_field.
+
+    Required:
+    fc -- feature class, feature layer, table, or table view
+    new_field -- new field name, will be altered if field already exists
+
+    Example:
+    >>> fc = 'c:\\testing.gdb\\ne_110m_admin_0_countries'
+    >>> create_field_name(fc, 'NEWCOL') # NEWCOL
+    >>> create_field_name(fc, 'Shape') # Shape_1
+    """
+
+    # if fc is a table view or a feature layer, some fields may be hidden;
+    # grab the data source to make sure all columns are examined
+    fc = arcpy.Describe(fc).catalogPath
+    new_field = arcpy.ValidateFieldName(new_field, os.path.dirname(fc))
+
+    # maximum length of the new field name
+    maxlen = 64
+    dtype = arcpy.Describe(fc).dataType
+    if dtype.lower() in ('dbasetable', 'shapefile'):
+        maxlen = 10
+
+    # field list
+    fields = [f.name.lower() for f in arcpy.ListFields(fc)]
+
+    # see if field already exists
+    if new_field.lower() in fields:
+        count = 1
+        while new_field.lower() in fields:
+
+            if count > 1000:
+                raise ArcapiError('Maximum number of iterations reached in uniqueFieldName.')
+
+            if len(new_field) > maxlen:
+                ind = maxlen - (1 + len(str(count)))
+                new_field = '{0}_{1}'.format(new_field[:ind], count)
+                count += 1
+            else:
+                new_field = '{0}_{1}'.format(new_field, count)
+                count += 1
+
+    return new_field
+
+
+def join_using_dict(source_table, in_field, join_table, join_key, join_values=[]):
+    """Join values from one table to another using dictionary.
+
+    Add fields from one table to another by using a dictionary rather
+    than joining tables.  There must be a field with common values between the
+    two tables to enable attribute matching.  Values from "join_key" field in
+    "join_table" should be unique.  This function can be faster than a standard
+    Join Tool for tables with only couple of hundreds or thousands of records.
+    This function alters the input source_table.
+    Returns path to the altered source table.
+
+    source_table -- table to add fields
+    in_field -- join field with common values from join_table
+    join_table -- table containing fields to add
+    join_key -- common field to match values to source_table
+    join_values -- fields to add from join_table to source_table
+
+    Example:
+    >>> parcels = r'C:\Temp\Parcels.gdb\Parcels'
+    >>> permits = r'C:\Temp\Parcels.gdb\Permits'
+    >>> add_flds = ['PERMIT_NUM', 'PERMIT_DATE', 'NOTE']
+    >>> join_using_dict(parcels, 'PIN', permits', 'PARCEL_ID', add_flds)
+    """
+
+    # test version for cursor type (data access module available @ 10.1 +)
+    ver = arcpy.GetInstallInfo()['Version']
+    dataAccess = False
+    if ver != '10.0':
+        dataAccess = True
+
+
+    # Get Catalog path (for feature layers and table views)
+    cat_path = arcpy.Describe(source_table).catalogPath
+
+    # Find out if source table is NULLABLE
+    if not os.path.splitext(cat_path)[1] in ['.dbf','.shp']:
+        nullable = 'NULLABLE'
+    else:
+        nullable = 'NON_NULLABLE'
+
+    # Add fields to be copied
+    update_fields = []
+    join_list = arcpy.ListFields(join_table)
+    for field in join_list:
+        ftype = field.type
+        name = field.name
+        length = field.length
+        pres = field.precision
+        scale = field.scale
+        alias = field.aliasName
+        domain = field.domain
+        for fldb in join_values:
+            if fldb == name:
+                name = create_field_name(source_table, fldb)
+                arcpy.AddField_management(source_table,name,ftype,pres,scale,length,alias,nullable,'',domain)
+                msg("Added '%s' field to \"%s\"" %(name, os.path.basename(source_table)))
+                update_fields.insert(join_values.index(fldb), name.encode('utf-8'))
+
+    # update new fields
+    path_dict = {}
+    if dataAccess:
+
+        # Create Dictionary
+        join_values.insert(0, join_key)
+        with arcpy.da.SearchCursor(join_table, join_values) as srows:
+            for srow in srows:
+                path_dict[srow[0]] = tuple(srow[1:])
+
+        # Update Cursor
+        update_index = list(range(len(update_fields)))
+        row_index = list(x+1 for x in update_index)
+        update_fields.insert(0, in_field)
+        with arcpy.da.UpdateCursor(source_table, update_fields) as urows:
+            for row in urows:
+                if row[0] in path_dict:
+                    try:
+                        allVals =[path_dict[row[0]][i] for i in update_index]
+                        for r,v in zip(row_index, allVals):
+                            row[r] = v
+                        urows.updateRow(row)
+                    except: pass
+
+    else:
+        # version 10.0
+        rows = arcpy.SearchCursor(join_table)
+        for row in rows:
+            path_dict[row.getValue(join_key)] = tuple(row.getValue(v) for v in join_values)
+        del rows
+
+        # Update Cursor
+        rows = arcpy.UpdateCursor(source_table)
+        for row in rows:
+            theVal = row.getValue(in_field)
+            if theVal in path_dict:
+                try:
+                    for i in range(len(update_fields)):
+                        row.setValue(update_fields[i],path_dict[theVal][i])
+                    rows.updateRow(row)
+                except: pass
+        del rows
+    msg('Fields in "%s" updated successfully' %(os.path.basename(source_table)))
+    return source_table
+
+
+def concatenate(vals=[], delimiter='', number_only=False):
+    """Concatenate a list of values using a specified delimiter.
+
+    Required:
+    vals -- list of values to concatenate
+
+    Optional:
+    delimiter -- separator for new concatenated string. Default is '' (no delimiter)
+    number_only -- if True, only numbers in list will be used. Default is False (bool)
+    """
+    if number_only:
+        return delimiter.join(''.join(str(i) for i in v if str(v).isdigit()) for v in vals)
+    else:
+        return delimiter.join(map(str, vals))
+
+
+def concatenate_fields(table, new_field, length, fields=[], delimiter='', number_only=False):
+    """Create a new field in a table and concatenate user defined fields.
+
+    This can be used in situations such as creating a Section-Township-Range
+    field from 3 different fields.
+    Returns the field name that was added.
+
+    Required:
+    table -- Input table
+    new_field -- new field name
+    length -- field length
+    fields -- list of fields to concatenate
+
+    Optional:
+    delimiter -- join value for concatenated fields
+        (example: '-' , all fields will be delimited by dash)
+    number_only -- if True, only numeric values from a text field are extracted.
+        Default is False.
+
+    Example:
+    >>> sec = r'C:\Temp\Sections.shp'
+    >>> concatenate_fields(sec, 'SEC_TWP_RNG', 15, ['SECTION', 'TOWNSHIP', 'RANGE'], '-')
+    """
+
+    # Add field
+    new_field = create_field_name(table, new_field)
+    arcpy.AddField_management(table, new_field, 'TEXT', field_length=length)
+
+    # Concatenate fields
+    if arcpy.GetInstallInfo()['Version'] != '10.0':
+        # da cursor
+        with arcpy.da.UpdateCursor(table, fields + [new_field]) as rows:
+            for r in rows:
+                r[-1] = concatenate(r[:-1], delimiter, number_only)
+                rows.updateRow(r)
+
+    else:
+        # 10.0 cursor
+        rows = arcpy.UpdateCursor(table)
+        for r in rows:
+            r.setValue(new_field, concatenate([r.getValue(f) for f in fields], delimiter, number_only))
+            rows.updateRow(r)
+        del r, rows
+    return new_field
+
+
+def create_pie_chart(fig, table, case_field, data_field='', fig_title='', x=8.5, y=8.5, rounding=0):
+    """Create a pie chart based on a case field and data field.
+
+    If no data_field is specified, the pie chart slices reflect frequency
+    of value in the case_field.
+
+    WARNING: although this tool successfully creates a pie chart .png,
+             it throws a C++ runtime error.  TODO: Need to investigate this.
+
+    Required:
+    fig -- output png file for pie chart
+    table -- table for data to create pie chart
+    case_field -- field that will be used to summarize values,
+                  and also will provide the labels for the legend.
+
+    Optional:
+    data_field -- field with values for pie chart.  If no field is
+                  specified, count of each value in case_field will be used
+    fig_title -- title for the pie chart figure
+    x --  size for y-axis side (in inches)
+    y --  size for y-axis side (in inches)
+    rounding -- rounding for pie chart legend labels.  Default is 0.
+
+    Example:
+    >>> wards = r'C:\Temp\Voting_Wards.shp'
+    >>> figure = r'C:\Temp\Figures\Election_results.png'
+    >>> create_pie_chart(figure, wards, 'CANDIDATE', 'NUM_VOTES', 'Election Results')
+    """
+
+    import pylab, numpy, re
+
+    # make sure figure is .png or .jpg
+    if not re.findall('.png', fig, flags=re.IGNORECASE):
+        out_file += '.png'
+
+    # rounding nested function, (rounding value of 0 from built in round does not return integer)
+    def rnd(f, t, rounding):
+        return round((f/float(t))*100, rounding) if rounding > 0 else int((f/float(t))*100)
+
+    # Grab unique values
+    with arcpy.da.SearchCursor(table, [case_field]) as rows:
+        cases = sorted(list(set(r[0] for r in rows)))
+
+    # if not data_field
+    tmp_fld = 'cnt_xx_xx_'
+    fields = [case_field, data_field]
+    if not data_field:
+        arcpy.AddField_management(table, tmp_fld, 'SHORT')
+        with arcpy.da.UpdateCursor(table, [tmp_fld]) as rows:
+            for r in rows:
+                r[0] = 1
+                rows.updateRow(r)
+        fields = [case_field, tmp_fld]
+
+    # vals for slices
+    vals=[]
+
+    # sum values
+    sum_table = str(arcpy.Statistics_analysis(table, r'in_memory\sum_tab_xxx',
+                                              [[fields[1], 'SUM']],
+                                              fields[0]).getOutput(0))
+    fields[1] = 'SUM_{0}'.format(fields[1])
+    with arcpy.da.SearchCursor(sum_table, fields) as rows:
+        for r in rows:
+            vals.append([r[0],r[1]])
+
+    # clean up tmp_fld if necessary
+    if not data_field:
+        if tmp_fld in [f.name for f in arcpy.ListFields(table)]:
+            try:
+                arcpy.DeleteField_management(table, tmp_fld)
+            except:
+                pass
+
+    # Create Pie Charts
+    the_fig = pylab.figure(figsize=(x, y))
+    pylab.axes([0.1, 0.1, 0.8, 0.8])
+    label = [v[0] for v in vals]
+    fracs = [v[1] for v in vals]
+    tot = [sum(fracs)] * len(fracs)
+    if len(label) == len(fracs):
+        cmap = pylab.plt.cm.prism
+        color = cmap(numpy.linspace(0., 1., len(fracs)))
+        pie_wedges = pylab.pie(fracs,colors=color,pctdistance=0.5, labeldistance=1.1)
+        for wedge in pie_wedges[0]:
+            wedge.set_edgecolor('white')
+        pylab.legend(map(lambda x, f, t: '{0} ({1}, {2}%)'.format(x, f, rnd(f, t, rounding)),
+                                                                  label, fracs, tot),
+                                                                  loc=(0,0), prop={'size':8})
+        pylab.title(fig_title)
+        pylab.savefig(fig)
+        msg('Created: %s' %fig)
+    arcpy.Delete_management(sum_table)
+    return fig
+
+
+def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
+    """Combine PDF documents using arcpy mapping  module
+
+    Required:
+    out_pdf -- output pdf document (.pdf)
+    pdf_path_or_list -- list of pdf documents or folder
+        path containing pdf documents.
+
+    Optional:
+    wildcard -- optional wildcard search (only applies
+        when searching through paths)
+
+    Example:
+    >>> # test function with path
+    >>> out_pdf = r'C:\Users\calebma\Desktop\test.pdf'
+    >>> path = r'C:\Users\calebma\Desktop\pdfTest'
+    >>> combine_pdfs(out_pdf, path)
+
+    >>> # test function with list
+    >>> out = r'C:\Users\calebma\Desktop\test2.pdf'
+    >>> pdfs = [r'C:\Users\calebma\Desktop\pdfTest\Mailing_Labels5160.pdf',
+                r'C:\Users\calebma\Desktop\pdfTest\Mailing_Taxpayer.pdf',
+                r'C:\Users\calebma\Desktop\pdfTest\stfr.pdf']
+    >>> combine_pdfs(out, pdfs)
+    """
+
+    import glob
+
+    # Create new PDF document
+    pdfDoc = arcpy.mapping.PDFDocumentCreate(out_pdf)
+
+    # if list, use that to combine pdfs
+    if isinstance(pdf_path_or_list, list):
+        for pdf in pdf_path_or_list:
+            pdfDoc.appendPages(pdf)
+            msg('Added "%s" to "%s"' %(pdf, os.path.basename(out_pdf)))
+
+    # search path to find pdfs
+    elif isinstance(pdf_path_or_list, str):
+        if os.path.exists(pdf_path_or_list):
+            search = os.path.join(pdf_path_or_list,'{0}*.pdf'.format(wildcard))
+            for pdf in sorted(glob.glob(search)):
+                pdfDoc.appendPages(os.path.join(pdf_path_or_list, pdf))
+                msg('Added "%s" to "%s"' %(pdf, os.path.basename(out_pdf)))
+
+    # Save and close pdf document
+    pdfDoc.saveAndClose()
+    del pdfDoc
+    msg('Created: %s' %out_pdf)
+    return out_pdf
+
 
 class ArcapiError(Exception):
     """A type of exception raised from arcapi module"""
@@ -1511,6 +2224,18 @@ osj = os.path.join
 bname = os.path.basename
 dname = os.path.dirname
 srs = arcpy.SpatialReference
+
+
+lut_field_types = {
+    'Date':'DATE',
+    'String':'TEXT',
+    'Single':'FLOAT',
+    'Double':'DOUBLE',
+    'SmallInteger':'SHORT',
+    'Integer':'LONG',
+    'GUID':'GUID',
+    'Raster':'RASTER'
+}
 
 
 def main():
