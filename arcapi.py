@@ -22,7 +22,7 @@ import time
 import arcpy
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 """Version number of arcapi"""
 
 

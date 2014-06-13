@@ -410,12 +410,6 @@ class TestGlobalFunctions(unittest.TestCase):
         ndvi = os.path.join(_dir, 'dh_july_ndvi')
         est = os.path.join(_dir, 'ndvi_fill')
         null = os.path.join(_dir, 'null_rst')
-
-        print est
-        print null
-        print ndvi
-        print '-'*40
-
         if arcpy.CheckExtension('Spatial') == 'Available':
             ap.fill_no_data(ndvi, est, 10, 10)
             arcpy.CheckOutExtension('Spatial')
