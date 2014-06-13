@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xml:lang="en"><Esri><CreaDate>20140613</CreaDate><CreaTime>22441200</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process ToolSource="c:\program files (x86)\arcgis\desktop10.1\ArcToolbox\Toolboxes\Data Management Tools.tbx\BuildPyramids" Date="20140613" Time="224412">BuildPyramids C:\Users\filipkral\Documents\GitHub\arcapi\testing\testing_files\rasters\filled_rstxxx -1 NONE NEAREST DEFAULT 75 OVERWRITE</Process></lineage></DataProperties></Esri></metadata>
