@@ -3,9 +3,10 @@
 # Name:        arcapi_test
 # Purpose:     Tests for arcapi module.
 #
-# Author:      Filip Kral
+# Author:      Filip Kral, Caleb Mackay
 #
 # Created:     01/02/2014
+# Updated:     05/15/2014
 # Licence:     LGPL v3
 #-------------------------------------------------------------------------------
 # Most of the functions operate on potentially complex data, or require manual
@@ -21,16 +22,22 @@ import sys
 import arcpy
 import arcapi as ap
 
+
 class TestGlobalFunctions(unittest.TestCase):
 
     def setUp(self):
         # access testing data
-        self.testingfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testing')
+        try:
+            self.testingfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testing')
+        except:
+            self.testingfolder = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'testing')
         self.testing_gdb = os.path.join(self.testingfolder, 'testing.gdb')
         #self.t_table = os.path.join(self.testing_gdb, '\left_i_right')
         #self.t_fc =  os.path.join(self.testing_gdb, 'left_i_right')
         #self.t_cols = ('OBJECTID', 'Shape', 'CCARM2', 'POINT_X', u'POINT_Y', u'ROUND_X', 'ROUND_Y', 'name', 'propagatedName', 'fullName', 'GID', 'DOWNGID', 'HA_NUM','STRAHLER', 'SHREVE', 'OS_NAME', 'FNODE_FULL', 'TNODE_FULL', 'NAMENOXML', 'Shape_Length')
         self.t_fc =  os.path.join(self.testing_gdb, 'ne_110m_admin_0_countries')
+        self.t_fc2 = os.path.join(self.testing_gdb, 'Illinois')
+        self.t_tab = os.path.join(self.testing_gdb, 'Illinois_county_info')
         self.t_cols =  ('OBJECTID','Shape','ScaleRank','LabelRank','FeatureCla',
                       'SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADMIN',
                       'ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT',
@@ -362,7 +369,7 @@ class TestGlobalFunctions(unittest.TestCase):
         self.assertTrue(all(est))
 
     def testfind(self):
-        self.testingfolder = r'C:\Users\filipkral\Documents\GitHub\arcapi\testing'
+        self.testingfolder = os.path.join(os.path.dirname(sys.argv[0]), 'testing')
         obs = [1, 5]
         est = []
         findings = ap.find('*.shp', self.testingfolder)
@@ -371,18 +378,215 @@ class TestGlobalFunctions(unittest.TestCase):
         est.append(len(findings))
         self.assertEqual(est, obs)
 
-    def testconvertIntegerToFloat(self):
-        #TODO
+    def testfixArgs(self):
+        list_args = 'C:\Temp\Shapefiles\Contours.shp;C:\Temp\Shapefiles\Contours.shp'
+        est = ap.fixArgs(list_args, list)
+        obs = ['C:\\Temp\\Shapefiles\\Contours.shp', 'C:\\Temp\\Shapefiles\\Contours.shp']
+        self.assertEqual(est, obs)
+        est = ap.fixArgs('false', bool)
+        self.assertEqual(est, False)
         pass
 
-    def testfillNoDataValues(self):
-        #TODO
+    def testint_to_float(self):
+        _dir = os.path.join(self.testingfolder, r'testing_files\rasters')
+        ndvi = os.path.join(_dir, 'dh_july_ndvi')
+        ob = round(arcpy.Raster(ndvi).maximum, 5)
+        int_rst = os.path.join(_dir, 'ndvi_int')
+        est = os.path.join(_dir, 'ndvi_tst')
+        if arcpy.CheckExtension('Spatial') == 'Available':
+            arcpy.CheckOutExtension('Spatial')
+            arcpy.sa.Int(arcpy.sa.Times(ndvi, 1000000)).save(int_rst)
+            arcpy.CheckInExtension('Spatial')
+            ap.int_to_float(int_rst, est, 6)
+            self.assertEqual(ob, round(arcpy.Raster(est).maximum, 5))
+            for rast in [int_rst, est]:
+                try:
+                    arcpy.Delete_management(rast)
+                except:pass
         pass
 
-    def testconvertMetersToFeet(self):
-        #TODO
+    def testfill_no_data(self):
+        _dir = os.path.join(self.testingfolder, r'testing_files\rasters')
+        ndvi = os.path.join(_dir, 'dh_july_ndvi')
+        est = os.path.join(_dir, 'ndvi_fill')
+        null = os.path.join(_dir, 'null_rst')
+
+        print est
+        print null
+        print ndvi
+        print '-'*40
+
+        if arcpy.CheckExtension('Spatial') == 'Available':
+            ap.fill_no_data(ndvi, est, 10, 10)
+            arcpy.CheckOutExtension('Spatial')
+            arcpy.sa.IsNull(est).save(null)
+            self.assertEqual(arcpy.Raster(null).maximum, 0)
+            arcpy.CheckInExtension('Spatial')
+            for rast in [est, null]:
+                try:
+                    arcpy.Delete_management(rast)
+                except:pass
         pass
 
+    def testmeters_to_feet(self):
+        _dir = os.path.join(self.testingfolder, r'testing_files\rasters')
+        dem = os.path.join(_dir, 'dh30m_dem')
+        est = os.path.join(_dir, 'dem_ft')
+        ap.meters_to_feet(dem, est)
+        self.assertEqual(int(arcpy.Raster(est).maximum), 6244)
+        try:
+            arcpy.Delete_management(est)
+        except:
+            pass
+        pass
+
+    def testcopy_schema(self):
+        tmp = r'in_memory\schema_test'
+        ap.copy_schema(self.t_fc, tmp)
+        self.assertTrue(arcpy.Exists(tmp))
+        arcpy.Delete_management(tmp)
+        pass
+
+    def testmake_poly_from_extent(self):
+        desc = arcpy.Describe(self.t_fc2)
+        ext = desc.extent
+        sr = desc.spatialReference
+        est = ap.make_poly_from_extent(ext, sr)
+        self.assertEqual(str(ext), str(est.extent))
+        pass
+
+    def testlist_all_fcs(self):
+        est = ap.list_all_fcs(self.testing_gdb, '*', 'All', True)
+        obs = ['Illinois', 'ne_110m_admin_0_countries']
+        self.assertEqual(est, obs)
+        pass
+
+    def testfield_list(self):
+        il = os.path.join(self.testing_gdb, 'Illinois')
+        est = ap.field_list(il, ['state_fips', 'cnty_fips'])
+        obs = ['OBJECTID', 'Shape', 'NAME', 'STATE_NAME',
+               'FIPS', 'Shape_Length', 'Shape_Area']
+        self.assertEqual(est, obs)
+        pass
+
+    def testget_field_type(self):
+        il = os.path.join(self.testing_gdb, 'Illinois')
+        est = ap.get_field_type('NAME', il)
+        self.assertEqual(est, 'TEXT')
+        pass
+
+    def testmatch_field(self):
+        fc = os.path.join(self.testing_gdb, 'Illinois')
+        est = ap.match_field(fc, '*fips', True)
+        obs = ['STATE_FIPS', 'CNTY_FIPS', 'FIPS']
+        self.assertEqual(est, obs)
+        pass
+
+    def testadd_fields_from_table(self):
+        fc = os.path.join(self.testing_gdb, 'Illinois')
+        copy = fc + '_copy'
+        if arcpy.Exists(copy):
+            arcpy.Delete_management(copy)
+        arcpy.CopyFeatures_management(fc, copy)
+        flds = ['POP1990', 'POP2000']
+        tab = fc = os.path.join(self.testing_gdb, 'Illinois_county_info')
+        ap.add_fields_from_table(copy, tab, flds)
+        est = [f.name for f in arcpy.ListFields(copy)]
+        try:
+            arcpy.Delete_management(copy)
+        except: pass
+        for f in flds:
+            self.assertTrue(f in est)
+        pass
+
+    def testcreate_field_name(self):
+        fc = os.path.join(self.testing_gdb, 'Illinois')
+        est = ap.create_field_name(fc, 'NAME')
+        self.assertEqual(est, 'NAME_1')
+        pass
+
+    def testjoin_using_dict(self):
+        if arcpy.Exists(r'in_memory\copy'):
+            arcpy.Delete_management(r'in_memory\copy')
+        fc = os.path.join(self.testing_gdb, 'Illinois')
+        copy = fc + '_copy'
+        if arcpy.Exists(copy):
+            arcpy.Delete_management(copy)
+        arcpy.CopyFeatures_management(fc, copy)
+        flds = ['POP1990', 'POP2000']
+        tab = fc = os.path.join(self.testing_gdb, 'Illinois_county_info')
+        ap.join_using_dict(copy, 'CNTY_FIPS', tab, 'CNTY_FIPS', flds)
+        est = [f.name for f in arcpy.ListFields(copy)]
+        try:
+            arcpy.Delete_management(copy)
+        except: pass
+        for f in flds:
+            self.assertTrue(f in est)
+        pass
+
+    def testconcatenate(self):
+        est = ap.concatenate(['A','B','C'], '-')
+        self.assertEqual(est, 'A-B-C')
+        pass
+
+    def testconcatenate_fields(self):
+        if arcpy.Exists(r'in_memory\copy'):
+            arcpy.Delete_management(r'in_memory\copy')
+        fc = os.path.join(self.testing_gdb, 'Illinois')
+        copy = fc + '_copy'
+        if arcpy.Exists(copy):
+            arcpy.Delete_management(copy)
+        arcpy.CopyFeatures_management(fc, copy)
+        ap.concatenate_fields(copy, 'FULL', 75, ['NAME', 'STATE_NAME'], ' County, ')
+        obs = 'Jo Daviess County, Illinois'
+        with arcpy.da.SearchCursor(copy, 'FULL') as rows:
+            est = rows.next()[0]
+        del rows
+        try:
+            arcpy.Delete_management(copy)
+        except: pass
+        self.assertEqual(est, obs)
+        pass
+
+    def testcreate_pie_chart(self):
+        tab = fc = os.path.join(self.testing_gdb, 'Illinois_county_info')
+        oid = arcpy.AddFieldDelimiters(tab, arcpy.Describe(tab).OIDFieldName)
+        where = '{0} < 11'.format(oid)
+        tv = arcpy.MakeTableView_management(tab, 'IL_table', where)
+        fig = os.path.join(self.testingfolder, 'IL_county_pop.png')
+        # will use 'CNTY_FIPS' as case field since our pop field is
+        # already populated for each county
+        ap.create_pie_chart(fig, tv, 'NAME','POP2000', 'IL Counties')
+        self.assertTrue(os.path.exists(fig))
+####        try:
+####            arcpy.Delete_management(fig) # may want to look at the figure, pretty cool!
+####        except:
+####            pass
+        pass
+
+    def testcombine_pdfs(self):
+        _dir = os.path.dirname(self.testingfolder)
+        mapDoc = os.path.join(_dir, 'chart.mxd')
+        mxd = arcpy.mapping.MapDocument(mapDoc)
+        txt_elm = [elm for elm in arcpy.mapping.ListLayoutElements(mxd, 'TEXT_ELEMENT')
+                   if elm.text == 'SomeText'][0]
+        del_list = []
+        for i in range(3):
+            txt_elm.text = "Hi, I'm page {0}".format(i)
+            pdf = os.path.join(_dir, 'test_{0}.pdf'.format(i))
+            arcpy.mapping.ExportToPDF(mxd, pdf, resolution=100)
+            del_list.append(pdf)
+        combined = os.path.join(_dir, 'combined.pdf')
+        del mxd
+        ap.combine_pdfs(combined, del_list)
+        self.assertTrue(os.path.exists(combined))
+        del_list.append(combined)
+        try:
+            for p in del_list:
+                arcpy.Delete_management(p)
+        except:
+            pass
+        pass
 
 if __name__ == '__main__':
     unittest.main(verbosity = 2)

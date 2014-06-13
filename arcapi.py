@@ -1476,7 +1476,7 @@ def fill_no_data(in_raster, out_raster, w=5, h=5):
     try:
         import arcpy.sa as sa
         # Make Copy of Raster
-        _dir, name = os.path.split(in_raster)
+        _dir, name = os.path.split(arcpy.Describe(in_raster).catalogPath)
         temp = os.path.join(_dir, 'rast_copyxxx')
         if arcpy.Exists(temp):
             arcpy.Delete_management(temp)
@@ -1484,19 +1484,16 @@ def fill_no_data(in_raster, out_raster, w=5, h=5):
 
         # Fill NoData
         arcpy.CheckOutExtension('Spatial')
-        filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(3,3),'MEAN'),temp)
-        filled_rst = os.path.join(_dir, 'filled_rstxxx')
-        filled.save(filled_rst)
-        arcpy.BuildPyramids_management(filled_rst)
+        filled = sa.Con(sa.IsNull(temp),sa.FocalStatistics(temp,sa.NbrRectangle(w,h),'MEAN'),temp)
+        filled.save(out_raster)
+        arcpy.BuildPyramids_management(out_raster)
         arcpy.CheckInExtension('Spatial')
 
         # Delete original and replace
-        if arcpy.Exists(in_raster):
-            arcpy.Delete_management(in_raster)
-            arcpy.Rename_management(filled_rst, os.path.join(_dir, name))
+        if arcpy.Exists(temp):
             arcpy.Delete_management(temp)
-        arcpy.AddMessage('Filled NoData Cells in: %s' %in_raster)
-        return in_raster
+        msg('Filled NoData Cells in: %s' %out_raster)
+        return out_raster
     except ImportError:
         return 'Module arcpy.sa not found.'
 
