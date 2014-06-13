@@ -1510,6 +1510,7 @@ wsps = swsp
 osj = os.path.join
 bname = os.path.basename
 dname = os.path.dirname
+srs = arcpy.SpatialReference
 
 
 def main():
