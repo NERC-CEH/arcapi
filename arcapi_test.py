@@ -144,6 +144,16 @@ class TestGlobalFunctions(unittest.TestCase):
         os.remove(pic)
         self.assertFalse(os.path.exists(pic))
 
+    def testpie(self):
+        pic = r'c:\temp\plot.png'
+        x = [1,2,3,4,5,6,7]
+        y = [1,1,2,2,3,3,3]
+        ap.pie(x, openit=False)
+        ap.pie(x, y, main="A chart", out_file=pic, autopct='%1.1f%%', openit=False)
+        ap.pie(x=[], y=[], openit=False)
+        os.remove(pic)
+        self.assertFalse(os.path.exists(pic))
+
     def testrename_col(self):
         import arcpy
         import tempfile

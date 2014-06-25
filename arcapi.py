@@ -176,15 +176,15 @@ def distinct(tbl, col, w=''):
 def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, verbose=True, returnit = False):
     """Print and/or return list of tuples formatted as a table.
 
- 
+
     Intended for quick printing of lists of tuples in the terminal.
     Returns None or the formatted table depending on value of returnit.
 
- 
+
     Required:
     x -- input list of tuples to print (can be tuple of tuples, list of lists).
 
- 
+
     Optional:
     delim -- delimiter to use between columns
     tbl -- table or list of arcpy.Field objects to take column headings from (default is None)
@@ -234,14 +234,14 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
             if clen > widths[nmi]:
                 widths[nmi] = clen
 
- 
+
     sbuilder = []
     frmtd = []
     for nmi in range(len(nms)):
         pad = widths[nmi] + lpadding + rpadding
         frmtd.append(str(nms[nmi]).center(pad, fch))
 
- 
+
     hdr = delim.join(frmtd)
     if verbose: print hdr # print header
     sbuilder.append(hdr)
@@ -269,12 +269,12 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
             frmtd.append(valf)
         rw = delim.join(frmtd)
 
- 
+
         if verbose:
             print rw # print row
         sbuilder.append(rw)
 
- 
+
     ret = "\n".join(sbuilder) if returnit else None
     return ret
 
@@ -282,12 +282,12 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
 def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbose=True):
     """Return top rows of table tbl.
 
- 
+
     Returns a list where the first element is a list of tuples representing
     first n rows of table tbl, second element is a dictionary like:
     {i: {"name":f.name, "values":[1,2,3,4 ...]}} for each field index i.
 
- 
+
     Optional:
     n -- number of rows to read, default is 10
     t -- if True (default), columns are printed as rows, otherwise as columns
@@ -297,7 +297,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
     w, where clause to limit selection from tbl
     verbose -- suppress printing if False, default is True
 
- 
+
     Example:
     >>> tmp = head('c:\\foo\\bar.shp', 5, True, "|", " ")
     """
@@ -324,7 +324,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
             for j in range(nflds):
                 fs[j]["values"].append(row[j])
 
- 
+
     if t:
         labels = []
         values = []
@@ -618,6 +618,152 @@ def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
     ax.set_xlabel(xlab)
     ax.set_ylabel(str(ylab))
     ax.set_title(str(args.get('main', 'Barplot')))
+    plt.savefig(out_file)
+    plt.close()
+    if openit:
+        import webbrowser
+        webbrowser.open_new_tab("file://" + out_file)
+
+    return
+
+
+def pie(x, y=None, **kwargs):
+    """
+    Create and display a plot (PNG) showing pie chart of x.
+
+    Uses matplotlib.pyplot.pie, draws an empty plot if x is empty.
+    The fractional area of each wedge is given by x/sum(x).  If sum(x) <= 1,
+    then the values of x will be used as the fractional area directly.
+
+    Use matplotlib colors for coloring;
+        'r': red, 'b': blue, 'g': green, 'c': cyan, 'm': magenta,
+        'y': yellow, 'k': black, 'w': white, hexadecimal code like '#eeefff',
+        shades of grey as '0.75', 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
+
+    Required:
+    x -- Input data. list-like of bar heights.
+
+    Optional keyword arguments (see matplotlib.pyplot.pie for further details):
+    y -- Groupping data - list of factor values, len(x) == len(y),
+       values of x will be groupped by y and before the pie chart is plotted.
+       If y is specified, labels will include the relevant y value.
+    out_file -- output file, default is 'c:\\temp\\hist.png'
+    color -- scalar or array-like, the colors of the bar faces
+    labels -- list-like of labels for each wedge, or None for default labels
+    explode -- scalar or array like for offsetting wedges, default None (0.0)
+    main -- string, main title of the plot
+    openit -- Open exported figure in a webbrowser? True(default)|False.
+    autopct -- None, format string or function for labelling wedges.
+    pctdistance -- scalar or array like for fine tuning placment of text
+    labeldistance -- labels will be drawn this far from the pie (default is 1.1)
+    shadow -- Shadow beneath the pie? False(default)|True.
+    mainbox -- bbox properties of the main title, ignored if main is None
+    tight -- Apply tight layout? True(default)|False
+
+    Example:
+    >>> x = [1,2,3,4,5]
+    >>> lb = ['A','B','C','D','E']
+    >>> pie(x)
+    >>> pie(x, labels=lb, main='A Title')
+    >>> pie([1,2,3,4,5,6,7], y=[1,1,2,2,3,3,3], autopct='%1.1f%%')
+    >>> pie([1,2,3,4,5,6], y=[(1,'a'),(1,'a'),2,2,'b','b'], autopct='%1.1f%%')
+    """
+    import matplotlib.pyplot as plt
+
+    # unpack arguments
+    #y = kwargs.get('y', None) # more convenient to get as a named argument
+    out_file =kwargs.get('out_file', 'c:\\temp\\hist.png')
+    openit = kwargs.get('openit', True)
+    #
+    explode = kwargs.get('explode', None)
+    labels = kwargs.get('labels', None)
+    colors = kwargs.get('colors', ('b', 'g', 'r', 'c', 'm', 'y', 'k', 'w'))
+    autopct = kwargs.get('autopct', None)
+    pctdistance = kwargs.get('pctdistance', 0.6)
+    labeldistance = kwargs.get('labeldistance', 1.1)
+    shadow = kwargs.get('shadow', False)
+    startangle = kwargs.get('startangle', 90)
+    #
+    main = kwargs.get('main', None)
+    mainbox = kwargs.get('mainbox', None)
+    legend = kwargs.get('legend', True)
+    legloc = kwargs.get('legloc', 'best')
+    tight = kwargs.get('tight', True)
+
+    # handle the cases when y parameter is supplied
+    # i.e. summarize x by y, construct labels etc.
+    n = len(x)
+    if y is not None:
+        if n != len(y):
+            raise ArcapiError("Lenghts of x and y must match, %s != %s" %
+                (n, len(y))
+            )
+
+        freqs = {}
+        for xi,yi in zip(x,y):
+            if yi in freqs:
+                freqs[yi] += xi
+            else:
+                freqs[yi] = xi
+
+        x,y = [],[]
+        for k,v in freqs.iteritems():
+            x.append(v)
+            y.append(k)
+        labels = y
+
+    # expand explode, labels, colors, etc. to the right length
+    n = len(x)
+    if explode is not None:
+        if isinstance(explode, list) or isinstance(explode, tuple):
+            if len(explode) != n:
+                explode = ( explode * n )[0:n]
+        else:
+            explode = [explode] * n
+    if labels is not None:
+        if isinstance(labels, list) or isinstance(labels, tuple):
+            if len(labels) != n:
+                labels = ( labels * n )[0:n]
+        else:
+            labels = [labels] * n
+    if colors is not None:
+        if isinstance(colors, list) or isinstance(colors, tuple):
+            if len(colors) != n:
+                colors = ( colors * n )[0:n]
+        else:
+            colors = [colors] * n
+
+    plt.figure(1)
+    plt.subplot(1,1,1)
+    pieresult = plt.pie(
+        x,
+        explode=explode,
+        labels=labels,
+        colors=colors,
+        autopct=autopct,
+        pctdistance=pctdistance,
+        shadow=shadow,
+        labeldistance=labeldistance
+    )
+    patches = pieresult[0]
+    texts = pieresult[1]
+
+    # add title
+    if main is not None:
+        plt.title(main, bbox=mainbox)
+
+    # add legend
+    if legend:
+        if labels is None:
+            labels = map(str, x)
+            plt.legend(patches, labels, loc=legloc)
+
+    # make output square and tight
+    plt.axis('equal')
+    if tight:
+        plt.tight_layout()
+
+    # save and display
     plt.savefig(out_file)
     plt.close()
     if openit:
