@@ -176,15 +176,18 @@ def distinct(tbl, col, w=''):
 def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, verbose=True, returnit = False):
     """Print and/or return list of tuples formatted as a table.
 
+ 
     Intended for quick printing of lists of tuples in the terminal.
     Returns None or the formatted table depending on value of returnit.
 
+ 
     Required:
     x -- input list of tuples to print (can be tuple of tuples, list of lists).
 
+ 
     Optional:
     delim -- delimiter to use between columns
-    tbl -- table to take column headings from (default is None)
+    tbl -- table or list of arcpy.Field objects to take column headings from (default is None)
     geoms -- if None (default), print geometries 'as is', else as str(geom).
         Works only is valid tbl is specified.
     filchar -- string to be used to pad values
@@ -203,7 +206,11 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
     else:
         nms,tps = [],[]
         i = 0
-        for f in arcpy.ListFields(tbl):
+        if isinstance(tbl, list) or isinstance(tbl, tuple):
+            fields = tbl
+        else:
+            fields = arcpy.ListFields(tbl)
+        for f in fields:
             nms.append(f.name)
             tps.append(f.type)
             if f.type.lower() == "geometry" and geoms is not None:
@@ -227,12 +234,14 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
             if clen > widths[nmi]:
                 widths[nmi] = clen
 
+ 
     sbuilder = []
     frmtd = []
     for nmi in range(len(nms)):
         pad = widths[nmi] + lpadding + rpadding
         frmtd.append(str(nms[nmi]).center(pad, fch))
 
+ 
     hdr = delim.join(frmtd)
     if verbose: print hdr # print header
     sbuilder.append(hdr)
@@ -260,40 +269,51 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
             frmtd.append(valf)
         rw = delim.join(frmtd)
 
+ 
         if verbose:
             print rw # print row
         sbuilder.append(rw)
 
+ 
     ret = "\n".join(sbuilder) if returnit else None
     return ret
 
 
-def head(tbl, n=10, t=True, delimiter="; ", geoms = None, w = "", verbose=True):
+def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbose=True):
     """Return top rows of table tbl.
 
+ 
     Returns a list where the first element is a list of tuples representing
     first n rows of table tbl, second element is a dictionary like:
     {i: {"name":f.name, "values":[1,2,3,4 ...]}} for each field index i.
 
+ 
     Optional:
     n -- number of rows to read, default is 10
     t -- if True (default), columns are printed as rows, otherwise as columns
     delimiter -- string to be used to separate values (if t is True)
     geoms -- if None (default), print geometries 'as is', else as str(geom).
+    cols -- list of columns to include, include all by default, case insensitive
     w, where clause to limit selection from tbl
     verbose -- suppress printing if False, default is True
 
+ 
     Example:
     >>> tmp = head('c:\\foo\\bar.shp', 5, True, "|", " ")
     """
+    allcols = ['*', ['*'], ('*'), [], ()]
+    colslower = [c.lower() for c in cols]
     flds = arcpy.ListFields(arcpy.Describe(tbl).catalogPath)
+    if cols not in allcols:
+        flds = [f for f in flds if f.name.lower() in colslower]
     fs = {}
     nflds = len(flds)
     fieldnames = []
     for i in range(nflds):
         f = flds[i]
-        fieldnames.append(f.name)
-        fs.update({i: {"name":f.name, "values":[]}})
+        if cols in allcols or f.name in cols:
+            fieldnames.append(f.name)
+            fs.update({i: {"name":f.name, "values":[]}})
     i = 0
     hd = []
     with arcpy.da.SearchCursor(tbl, fieldnames, where_clause = w) as sc:
@@ -304,6 +324,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms = None, w = "", verbose=True):
             for j in range(nflds):
                 fs[j]["values"].append(row[j])
 
+ 
     if t:
         labels = []
         values = []
@@ -323,10 +344,8 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms = None, w = "", verbose=True):
                 print toprint
     else:
         if verbose:
-            print_tuples(hd, delim=delimiter, tbl=tbl, geoms=geoms, returnit=False)
+            print_tuples(hd, delim=delimiter, tbl=flds, geoms=geoms, returnit=False)
     return [hd, fs]
-
-
 def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution=95, openit=True):
     """Create and open a map (JPG) showing x and return path to the figure path.
 
