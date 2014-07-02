@@ -52,7 +52,26 @@ Feel free to submit issues and enhancement requests.
 
 Contributing
 ------------
-We welcome contributions from anyone and everyone.
+We welcome contributions from anyone and everyone, we appreciate comments and
+raising issues as much as we value code contributions.
+
+The preferred way of making contribution is via GitHub as described below,
+but feel free to get in touch by email if GitHub is not your cup of tea.
+
+NERC-CEH/arcapi contains two main branches: 'master' and 'develop'.
+Master is always clean and functional, develop is for merging feature branches 
+before they are added to master. Issue pull requests against the develop branch,
+not the master branch. Only the code maintainer should change the master branch
+and make tags off the master.
+
+To make a contribution:
+1. Fork this repository.
+2. Make a new local feature branch from the develop branch.
+3. Work in the local feature branch.
+4. When done, merge to your fork of the develop branch.
+5. Make sure your develop branch is compatible with NERC-CEH/arcapi develop.
+6. Issue pull request to NERC-CEH/arcapi develop branch.
+
 If you feel you have made significant contribution anywhere in arcapi files,
 please add yourself to the authors at the top of arcapi.
 By contributing to arcapi you are releasing the code under the [Lesser General Public License v3](http://choosealicense.com/licenses/lgpl-v3/).
