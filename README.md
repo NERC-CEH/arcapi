@@ -6,7 +6,7 @@ How to use?
 -----------
 
     import arcapi as ap
-    ap.version()
+    ap.__version__
 
 
 Installation
