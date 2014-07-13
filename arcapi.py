@@ -22,7 +22,7 @@ import time
 import arcpy
 
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 """Version number of arcapi"""
 
 
@@ -2213,6 +2213,71 @@ def concatenate_fields(table, new_field, length, fields=[], delimiter='', number
             rows.updateRow(r)
         del r, rows
     return new_field
+
+
+def list_data(top, **options):
+    """Walk down a file structure and pick up all data sets (items).
+    Returns a generator of full paths to the items.
+    Uses arcpy.da.Walk to discover GIS data.
+
+    Use the oneach parameter to do something with each item as it is discovered.
+
+    Parameters:
+        top -- full path to the root workspace to start from
+
+    Optional keyword arguments:
+        exclude -- Function that takes item as a parameter and returns True if
+            the item should be skipped. Default is None, all items are listed.
+        exclude_dir -- Function that takes the directory name as a parameter and
+            returns True if the whole directory should be skipped.
+            Default is None, all directories are listed.
+        oneach -- Function that takes the item as a parameter.
+            Default is None and does nothing
+        onerror -- Function to handle errors, see arcpy.da.Walk help
+        datatypes -- list of all data types to discover, see arcpy.da.Walk help
+        type -- Feature and raster data types to discover, see arcpy.da.Walk help
+            Feature: Multipatch, Multipoint, Point, Polygon, Polyline
+            Raster: BIL, BIP, BMP, BSQ, DAT, GIF, GRID, IMG, JP2, JPG, PNG, TIF
+        skippers -- iterable of strings, item is skipped if it contains a skipper
+            Skippers are not case sensitive
+
+    Example:
+    >>> list_data(r'c:\temp')
+    >>> skippers = (".txt", ".xls", ".ttf")
+    >>> exclude = lambda a: "_expired2013" in a
+    >>> list_data(r'c:\temp', exclude=exclude, skippers=skippers)
+    """
+
+    exclude = options.get('exclude', None)
+    exclude_dir = options.get('exclude_dir', None)
+    oneach = options.get('oneach', None)
+    onerror = options.get('onerror', None)
+    datatypes = options.get('datatypes', None)
+    types = options.get('type', None)
+    skippers = options.get('skippers', None)
+
+    if skippers is not None:
+        skippers = [str(sk).lower() for sk in skippers]
+
+    for dirpath, dirnames, filenames in arcpy.da.Walk(top, topdown=True, onerror=onerror, followlinks=False, datatype=datatypes, type=types):
+
+        if exclude_dir is not None:
+            dirnames = [di for di in dirnames if not exclude_dir(di)]
+
+        for filename in filenames:
+            item = os.path.join(dirpath, filename)
+            if exclude is not None:
+                 # skip items for which exclude is True
+                if exclude(item):
+                    continue
+            if skippers is not None:
+                 # skip items that contain any skipper values
+                if any([item.lower().find(sk) > -1 for sk in skippers]):
+                    continue
+            if oneach is not None:
+                # handle item if 'oneach' handler provided
+                oneach(item)
+            yield item
 
 
 def create_pie_chart(fig, table, case_field, data_field='', fig_title='', x=8.5, y=8.5, rounding=0):

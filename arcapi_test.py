@@ -592,5 +592,14 @@ class TestGlobalFunctions(unittest.TestCase):
             pass
         pass
 
+
+    def testlist_data(self):
+        """TODO: Write more tests for listing data"""
+        expected = ['testing.gdb','testing_files']
+        data = ap.list_data(self.testingfolder)
+        datas = str("".join(data))
+        all_in = all([(ei in datas) for ei in expected])
+        self.assertTrue(all_in)
+
 if __name__ == '__main__':
     unittest.main(verbosity = 2)
