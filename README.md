@@ -25,10 +25,10 @@ If you do not want to put it into your python path, then:
 Resources
 ---------
 - Read [tutorial](https://github.com/NERC-CEH/arcapi/blob/master/arcapi_tutorial.py) to get a glimpse of what arcapi is about.
-- Each function in arcapi has a decent docstring.
+- Each function in arcapi has a decent docstring, more examples are in [arcapi_test.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapi_test.py).
 - Read the header of [arcapi.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapi.py).
 - List all functions and their documentation: `help(arcapi)`
-- [ArcGIS Forum thread announcing arcapi] (http://forums.arcgis.com/threads/103666-arcapi-Convenient-API-for-arcpy) (please prefer github for discussions of details)
+- [Esri GeoNet arcapi Group](https://geonet.esri.com/groups/arcapi) and a [forum thread](https://geonet.esri.com/thread/89307)
 
 Dependencies
 ------------
