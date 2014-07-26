@@ -592,7 +592,6 @@ class TestGlobalFunctions(unittest.TestCase):
             pass
         pass
 
-
     def testlist_data(self):
         """TODO: Write more tests for listing data"""
         expected = ['testing.gdb','testing_files']
@@ -600,6 +599,34 @@ class TestGlobalFunctions(unittest.TestCase):
         datas = str("".join(data))
         all_in = all([(ei in datas) for ei in expected])
         self.assertTrue(all_in)
+
+    def testrequest_text(self):
+        """Basic test to get a page as text"""
+        d = ap.request('http://google.com')
+        self.assertNotEqual(d, '')
+
+    def testrequest_json(self):
+        """Get json from arcgis sampleserver"""
+        u = 'http://sampleserver3.arcgisonline.com/ArcGIS/rest/services'
+        d = ap.request(u, {'f':'json'}, 'json')
+        items = [
+            isinstance(d, dict),
+            isinstance(d.get('services'), list),
+            isinstance(d.get('folders'), list),
+            isinstance(d.get('currentVersion'), int)
+        ]
+        self.assertTrue(all(items))
+
+    def testrequest_xml(self):
+        """Get XML from epsg.io"""
+        u = 'http://epsg.io/4326.xml'
+        d = ap.request(u, None, 'xml')
+
+        tg = str(d.tag)
+        tp = '{http://www.opengis.net/gml/3.2}GeographicCRS'
+
+        self.assertEqual(tg, tp)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity = 2)

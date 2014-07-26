@@ -22,7 +22,7 @@ import time
 import arcpy
 
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 """Version number of arcapi"""
 
 
@@ -2426,6 +2426,77 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
     del pdfDoc
     msg('Created: %s' %out_pdf)
     return out_pdf
+
+
+def request(url, data=None, data_type='text', headers={}):
+    """Return result of an HTTP Request.
+
+    Uses urllib2.Request to issue the request. The request method (GET|POST)
+    depends on urllib2.Request, so any request with data will be POST.
+
+    Parameters:
+        url -- URL to issue the request to
+
+    Optional:
+        data -- dictionary of data to send
+        data_type -- text(default)|xml|json|jsonp|pjson
+            data is always obtained as text, but the this function
+            can convert the text depending on the data_type parameter:
+                text -- return the raw text as it is
+                xml -- parse the text with xml.etree.ElementTree and return
+                json -- parse the text with json.loads(text) and return
+                jsonp,pjson -- parse the text with json.loads(text) and return
+                    also, add parameter callback to the request
+
+    Example:
+    >>> request('http://google.com')
+    >>> u = 'http://sampleserver3.arcgisonline.com/ArcGIS/rest/services'
+    >>> request(u,{'f':'json'}, 'json')
+    >>> request('http://epsg.io/4326.xml', None, 'xml')
+    """
+
+    import urllib2
+    import urllib
+    import json
+
+    result = ''
+    callback = 'callmeback' # may not be used
+
+    # prepare data
+    data_type = str(data_type).lower()
+    if data_type in ('jsonp', 'pjson'):
+        if data is None:
+            data = {}
+        data['callback'] = callback
+
+    if data is not None:
+         data = urllib.urlencode(data)
+
+    # make the request
+    rq = urllib2.Request(url, data, headers)
+    re = urllib2.urlopen(rq)
+    rs = re.read()
+
+    # handle result
+    if data_type in ('json', 'jsonp', 'pjson'):
+        rs = rs.strip()
+
+        # strip callback function if present
+        if rs.startswith(callback + '('):
+            rs = rs.lstrip(callback + '(')
+            rs = rs[:rs.rfind(')')]
+
+        result = json.loads(rs)
+    elif data_type == 'xml':
+        from xml.etree import ElementTree as ET
+        rs = rs.strip()
+        result = ET.fromstring(rs)
+    elif data_type == 'text':
+        result = rs
+    else:
+        raise Exception('Unsupported data_type %s ' % data_type)
+
+    return result
 
 
 class ArcapiError(Exception):
