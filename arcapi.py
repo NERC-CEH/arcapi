@@ -904,17 +904,22 @@ def meta(datasource, mode="PREPEND", **args):
 
     Returns a dictionary of all accessible (if readonly) or all editted entries.
 
+    *** This function may irreversibly alter metadata, see details below! ***
+
     The following entries (XML elements) can be read or updated:
     Title ("dataIdInfo/idCitation/resTitle")
     Purpose ("dataIdInfo/idPurp")
     Abstract ("dataIdInfo/idAbs")
 
     This function exports metadata of the datasource to XML file using template
-    Metadata\Stylesheets\gpTools\exact copy of.xslt from ArcGIS installation
+    'Metadata\Stylesheets\gpTools\exact copy of.xslt' from ArcGIS installation
     directory. Then it loads the exported XML file into memory using Pythons
     xml.etree.ElementTree, modifies supported elements, writes a new XML file,
     and imports this new XML file as metadata to the datasource.
-
+    If the content of exported metada does not contain element dataInfo,
+    it is assumend the metadata is not up to date with current ArcGIS version
+    and UpgradeMetadata_conversion(datasource, 'ESRIISO_TO_ARCGIS') is applied!
+    Try whether this function is appropriate for your work flows on dummy data.
 
     Required:
     datasource -- path to the data source to update metadata for
@@ -934,12 +939,17 @@ def meta(datasource, mode="PREPEND", **args):
     >>> meta(fc, 'append', purpose='example', abstract='Column Spam means eggs')
     """
     import xml.etree.ElementTree as ET
-    xslt = None # could be exposed as a parameter to specify alternative xslt file
-    tmpmetadatafile = arcpy.CreateScratchName('tmpmetadatafile', workspace=arcpy.env.scratchFolder)
+    xslt = None # metadata template, could be exposed as a parameter
+    sf = arcpy.env.scratchFolder
+    tmpmetadatafile = arcpy.CreateScratchName('tmpmetadatafile', workspace=sf)
 
     # checks
-    if xslt is None: xslt = os.path.join(arcpy.GetInstallInfo()['InstallDir'], 'Metadata\Stylesheets\gpTools\exact copy of.xslt')
-    if not os.path.isfile(xslt): raise ArcapiError("Cannot find xslt file " + str(xslt))
+    if xslt is None:
+        template = 'Metadata\Stylesheets\gpTools\exact copy of.xslt'
+        arcdir = arcpy.GetInstallInfo()['InstallDir']
+        xslt = os.path.join(arcdir, template)
+    if not os.path.isfile(xslt):
+        raise ArcapiError("Cannot find xslt file " + str(xslt))
     mode = mode.upper()
 
     lut_name_by_node = {
@@ -960,32 +970,49 @@ def meta(datasource, mode="PREPEND", **args):
     reader = {}
     if readonly:
         args = {'title':'', 'purpose':'', 'abstract': ''}
+    else:
+        # Update the metadata version if it is not up to date
+        if tree.find('dataIdInfo') is None:
+            arcpy.conversion.UpgradeMetadata(datasource, 'ESRIISO_TO_ARCGIS')
+            os.remove(tmpmetadatafile)
+            r = arcpy.XSLTransform_conversion(datasource, xslt, tmpmetadatafile)
+            tmpmetadatafile = r.getOutput(0)
+            with file(tmpmetadatafile, "r") as f:
+                mf = f.read()
+            tree = ET.fromstring(mf)
 
     # get what user wants to update
     entries = {}
-    if args.get('title', None) is not None: entries.update({'dataIdInfo/idCitation/resTitle': args.get('title')})
-    if args.get('purpose', None) is not None: entries.update({'dataIdInfo/idPurp': args.get('purpose')})
-    if args.get('abstract', None) is not None: entries.update({'dataIdInfo/idAbs': args.get('abstract')})
+    if args.get('title', None) is not None:
+        entries.update({'dataIdInfo/idCitation/resTitle': args.get('title')})
+    if args.get('purpose', None) is not None:
+        entries.update({'dataIdInfo/idPurp': args.get('purpose')})
+    if args.get('abstract', None) is not None:
+        entries.update({'dataIdInfo/idAbs': args.get('abstract')})
 
     # update entries
     for p,t in entries.iteritems():
         el = tree.find(p)
         if el is None:
             if not readonly:
-                arcpy.AddWarning("Element " + str(p) + " not found in metadata, creating it from scratch.")
+                wm = "Element %s not found, creating it from scratch." % str(p)
+                arcpy.AddWarning(wm)
                 pparent = "/".join(p.split("/")[:-1])
                 parent = tree.find(pparent)
                 if parent is None:
-                    raise ArcapiError("Could not found %s as parent of %s in medatata for %s" % (pparent, p, str(datasource)))
+                    em = "Could not find parent %s as parent of %s in %s " % \
+                        (pparent, p, str(datasource))
+                    raise ArcapiError(em)
                 subel = ET.SubElement(parent, p.split("/")[-1])
-                subel.text = ''
+                subel.text = str(t)
                 el = subel
                 del subel
         else:
             if not readonly:
                 pre, mid, post = ('', '', '')
                 if mode != "OVERWRITE":
-                    mid = '' if el.text is None else el.text # remember existing content if not overwrite
+                    # remember existing content if not overwrite
+                    mid = '' if el.text is None else el.text
                     joiner = '&lt;br/&gt;'
                 else:
                     mid = str('' if t is None else t)
