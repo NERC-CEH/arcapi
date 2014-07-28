@@ -19,10 +19,15 @@
 import os
 import sys
 import time
-import arcpy
+
+try:
+    import arcpy
+except ImportError:
+    from ArcpyMockup import ArcpyMockup
+    arcpy = ArcpyMockup()
 
 
-__version__ = '0.2.4'
+__version__ = '0.2.6'
 """Version number of arcapi"""
 
 
@@ -2534,21 +2539,26 @@ class ArcapiError(Exception):
 """
 Aliases
 =======
+Modified to allow computers without arcpy import arcapi.
+That is why instead of just:
+search = arcpy.da.SearchCursor
+we need:
+searcher = getattr(getattr(arcpy, "da", None), "SearchCursor", None)
 """
-searcher = arcpy.da.SearchCursor
-updater = arcpy.da.UpdateCursor
-inserter = arcpy.da.InsertCursor
-add_col = arcpy.management.AddField
-descr = arcpy.Describe
-flyr = arcpy.management.MakeFeatureLayer
-rlyr = arcpy.management.MakeRasterLayer
-tviw = arcpy.management.MakeTableView
+searcher = getattr(getattr(arcpy, "da", None), "SearchCursor", None)
+updater = getattr(getattr(arcpy, "da", None), "UpdateCursor", None)
+inserter = getattr(getattr(arcpy, "da", None), "InsertCursor", None)
+add_col = getattr(getattr(arcpy, "management", None), "AddField", None)
+descr = getattr(arcpy, "Describe", None)
+flyr = getattr(getattr(arcpy, "management", None), "MakeFeatureLayer", None)
+rlyr = getattr(getattr(arcpy, "management", None), "MakeRasterLayer", None)
+tviw = getattr(getattr(arcpy, "management", None), "MakeTableView", None)
 tos = to_scratch
 wsps = swsp
 osj = os.path.join
 bname = os.path.basename
 dname = os.path.dirname
-srs = arcpy.SpatialReference
+srs = getattr(arcpy, "SpatialReference", None)
 
 
 lut_field_types = {
