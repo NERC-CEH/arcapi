@@ -27,7 +27,7 @@ except ImportError:
     arcpy = ArcpyMockup()
 
 
-__version__ = '0.2.6'
+__version__ = '0.2.7'
 """Version number of arcapi"""
 
 
@@ -2529,6 +2529,30 @@ def request(url, data=None, data_type='text', headers={}):
         raise Exception('Unsupported data_type %s ' % data_type)
 
     return result
+
+
+def srs_str_by_epsg(epsg, form='esriwkt'):
+    """Get spatial reference system by EPSG code as string.
+    Queries the http://epsg.io website.
+    epsg -- European Petrol Survey Group code (http://www.epsg.org/)
+    form -- Format to return:
+        html : HTML
+        wkt : Well Known Text
+        esriwkt : Esri Well Known Text
+        gml : GML
+        xml : XML
+        proj4 : Proj4
+        proj4js : proj4js
+        geoserver : GeoServer
+        mapfile : MAPfile
+        mapserverpython : MapServer - Python
+        mapnik : Mapnik
+        sql : PostGIS
+    Example:
+    >>> srs_str_by_epsg(27700, 'esriwkt')
+    """
+    srsstr = request('http://epsg.io/%s.%s' % (epsg, str(form).lower()))
+    return srsstr
 
 
 class ArcapiError(Exception):
