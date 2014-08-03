@@ -2531,10 +2531,10 @@ def request(url, data=None, data_type='text', headers={}):
     return result
 
 
-def srs_str_by_epsg(epsg, form='esriwkt'):
+def epsg(epsgcode, form='esriwkt'):
     """Get spatial reference system by EPSG code as string.
     Queries the http://epsg.io website.
-    epsg -- European Petrol Survey Group code (http://www.epsg.org/)
+    epsgcode -- European Petrol Survey Group code (http://www.epsg.org/)
     form -- Format to return:
         html : HTML
         wkt : Well Known Text
@@ -2542,16 +2542,16 @@ def srs_str_by_epsg(epsg, form='esriwkt'):
         gml : GML
         xml : XML
         proj4 : Proj4
-        proj4js : proj4js
+        js : proj4js
         geoserver : GeoServer
-        mapfile : MAPfile
+        map : MAPfile
         mapserverpython : MapServer - Python
         mapnik : Mapnik
         sql : PostGIS
     Example:
     >>> srs_str_by_epsg(27700, 'esriwkt')
     """
-    srsstr = request('http://epsg.io/%s.%s' % (epsg, str(form).lower()))
+    srsstr = request('http://epsg.io/%s.%s' % (epsgcode, str(form).lower()))
     return srsstr
 
 
