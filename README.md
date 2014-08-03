@@ -8,6 +8,8 @@ How to use?
     import arcapi as ap
     ap.__version__
 
+[![introducing aracpi] (./intro_to_arcapi.jpg "Watch into")](http://youtu.be/qCC2VRywYWg)
+
 
 Installation
 ------------
