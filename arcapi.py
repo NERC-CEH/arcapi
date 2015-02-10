@@ -19,6 +19,12 @@
 import os
 import sys
 import time
+import httplib
+import urllib
+import urllib2
+import json
+import urlparse
+from contextlib import closing
 
 try:
     import arcpy
@@ -2460,15 +2466,16 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
     return out_pdf
 
 
-def request(url, data=None, data_type='text', headers={}):
+def request_http(url, data=None, data_type='text', headers={}):
     """Return result of an HTTP Request.
 
-    Uses urllib2.Request to issue the request. The request method (GET|POST)
-    depends on urllib2.Request, so any request with data will be POST.
+    Only GET and POST methods are supported. To issue a GET request, parameters
+    must be encoded as part of the url and data must be None. To issue a POST
+    request, parameters must be supplied as a dictionary for parameter data and
+    the url must not include parameters.
 
     Parameters:
         url -- URL to issue the request to
-
     Optional:
         data -- dictionary of data to send
         data_type -- text(default)|xml|json|jsonp|pjson
@@ -2479,17 +2486,13 @@ def request(url, data=None, data_type='text', headers={}):
                 json -- parse the text with json.loads(text) and return
                 jsonp,pjson -- parse the text with json.loads(text) and return
                     also, add parameter callback to the request
-
+        header -- dictionary of headers to include in the request
     Example:
     >>> request('http://google.com')
     >>> u = 'http://sampleserver3.arcgisonline.com/ArcGIS/rest/services'
     >>> request(u,{'f':'json'}, 'json')
     >>> request('http://epsg.io/4326.xml', None, 'xml')
     """
-
-    import urllib2
-    import urllib
-    import json
 
     result = ''
     callback = 'callmeback' # may not be used
@@ -2527,6 +2530,144 @@ def request(url, data=None, data_type='text', headers={}):
         result = rs
     else:
         raise Exception('Unsupported data_type %s ' % data_type)
+
+    return result
+
+
+def request_https(url, data=None, data_type="text", headers={}):
+    """Return result of an HTTPS Request.
+    Uses urllib.HTTPSConnection to issue the request.
+
+    Only GET and POST methods are supported. To issue a GET request, parameters
+    must be encoded as part of the url and data must be None. To issue a POST
+    request, parameters must be supplied as a dictionary for parameter data and
+    the url must not include parameters.
+
+    Parameters:
+        url -- URL to issue the request to
+    Optional:
+        data -- dictionary of data to send
+        data_type -- text(default)|xml|json|jsonp|pjson
+            data is always obtained as text, but the this function
+            can convert the text depending on the data_type parameter:
+                text -- return the raw text as it is
+                xml -- parse the text with xml.etree.ElementTree and return
+                json -- parse the text with json.loads(text) and return
+                jsonp,pjson -- parse the text with json.loads(text) and return
+                    also, add parameter callback to the request
+        header -- dictionary of headers to include in the request
+    Example:
+    >>> request_https('https://gitgub.com')
+    >>> u = 'https://sampleserver3.arcgisonline.com/ArcGIS/rest/services'
+    >>> request_https(u,{'f':'json'}, 'json')
+    """
+    url = str(url)
+    callback = '' # may not be used
+
+    # add the https protocol if not already specified
+    if not url.lower().startswith("https://"):
+        url = "https://" + url
+
+    urlparsed = urlparse.urlparse(url)
+    hostname = urlparsed.hostname
+    path = url[8 + len(hostname):] # get path as url without https and host name
+
+    # connect to the host and issue the request
+    with closing(httplib.HTTPSConnection(hostname)) as cns:
+
+        if data is None:
+
+            if data_type == 'jsonp' or data_type == 'pjson':
+                # TODO: Make sure callback parameter is included
+                pass
+
+            # use GET request, all parameters must be encoded as part of the url
+            cns.request("GET", path, None, headers)
+
+        else:
+
+            if data_type == 'jsonp' or data_type == 'pjson':
+                raise Exception("data_type 'jsonp' not allowed for POST method!")
+
+            # use POST request, data must be a dictionary and not part of the url
+            d = urllib.urlencode(data)
+            cns.request("POST", path, d, headers)
+
+        r = cns.getresponse()
+        s = r.read()
+        cns.close()
+
+    # convert to required format
+    result = None
+    if data_type is None or data_type == 'text':
+        result = s
+    elif data_type == 'json':
+        result = json.loads(s)
+    elif data_type == 'jsonp' or data_type == 'pjson':
+        result = json.loads(s.lstrip(callback + "(").rstrip(")"))
+    elif data_type == 'xml':
+        from xml.etree import ElementTree as ET
+        rs = rs.strip()
+        result = ET.fromstring(rs)
+
+    return result
+
+
+def request(url, data=None, data_type='text', headers={}):
+    """Return result of an HTTP or HTTPS Request.
+
+    Uses urllib2.Request to issue HTTP request and the urllib.HTTPSConnection
+    to issue https requests.
+    Only GET and POST methods are supported. To issue a GET request, parameters
+    must be encoded as part of the url and data must be None. To issue a POST
+    request, parameters must be supplied as a dictionary for parameter data and
+    the url must not include parameters.
+
+    ***Security warning***
+    If url does not contain the protocol (http:// or https://) but just //,
+    this function will first try https request, but if that fails, http request
+    will be issued. For security reasons, protocol should be always specified,
+    otherwise sensitive data inteded for encrypted connection (https) may be
+    send to an unencripted connection. For example, consider you use the // to
+    request a https url and you need to include secret token in the header.
+    If the request fails, this function will attept to issue another request
+    over http and will include the secret token with the http request, which can
+    then be intercepted by malicious Internet users!
+
+    Parameters:
+        url -- URL to issue the request to
+    Optional:
+        data -- dictionary of data to send
+        data_type -- text(default)|xml|json|jsonp|pjson
+            data is always obtained as text, but the this function
+            can convert the text depending on the data_type parameter:
+                text -- return the raw text as it is
+                xml -- parse the text with xml.etree.ElementTree and return
+                json -- parse the text with json.loads(text) and return
+                jsonp,pjson -- parse the text with json.loads(text) and return
+                    also, add parameter callback to the request
+        headers -- dictionary of headers to include in the request
+    Example:
+    >>> request('http://google.com')
+    >>> u = 'http://sampleserver3.arcgisonline.com/ArcGIS/rest/services'
+    >>> request(u,{'f':'json'}, 'json')
+    >>> request('http://epsg.io/4326.xml', None, 'xml')
+    >>> request('https://gitgub.com')
+    """
+    url = str(url)
+    urll = url.lower()
+    if urll.startswith("http://"):
+        result = request_http(url, data, data_type, headers)
+    elif urll.startswith("https://"):
+        result = request_https(url, data, data_type, headers)
+    elif url.startswith("//"):
+        # try https first, then http
+        try:
+            result = request_https("https://" + url, data, data_type, headers)
+        except:
+            result = request_http("http://"+ url, data, data_type, headers)
+    else:
+        raise Exception("Protocol can only be http or https!")
 
     return result
 
