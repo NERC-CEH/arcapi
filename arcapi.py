@@ -25,6 +25,7 @@ import urllib2
 import json
 import urlparse
 from contextlib import closing
+import datetime
 
 try:
     import arcpy
@@ -2696,6 +2697,36 @@ def epsg(epsgcode, form='esriwkt'):
     return srsstr
 
 
+def arctype_to_ptype(tp):
+    """Convert ArcGIS field type string to Python type.
+      tp -- ArcGIS type as string like SHORT|LONG|TEXT|DOUBLE|FLOAT...
+    
+    Returns string for GUID, RASTER, BLOB, or other exotic types.
+    
+    Example:
+    >>> arctype_to_ptype("SHORT") # returns int
+    >>> arctype_to_ptype("long") # returns int
+    >>> arctype_to_ptype("SmallInteger") # returns int
+    >>> arctype_to_ptype("DATE") # returns datetime.datetime
+    """
+    tp = str(tp).upper()
+    o = str
+    if tp == "TEXT" or tp == "STRING":
+        o = str
+    elif tp == "SHORT" or tp == "SMALLINTEGER":
+        o = int
+    elif tp == "LONG" or tp == "INTEGER":
+        o = int
+    elif tp == "DATE" or tp == "DATETIME":
+        o = datetime.datetime
+    elif tp == "FLOAT" or tp == "SINGLE":
+        o = float
+    elif tp == "DOUBLE":
+        o = float
+    else:
+        o = str
+    return o
+    
 class ArcapiError(Exception):
     """A type of exception raised from arcapi module"""
     pass

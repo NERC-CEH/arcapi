@@ -626,7 +626,30 @@ class TestGlobalFunctions(unittest.TestCase):
         tp = '{http://www.opengis.net/gml/3.2}GeographicCRS'
 
         self.assertEqual(tg, tp)
-
+    
+    def testarctype_to_ptype(self):
+        """Converting from ArcGIS type strings to python types"""
+        self.assertTrue(arctype_to_ptype("SHORT") is int)
+        self.assertTrue(arctype_to_ptype("Short") is int)
+        self.assertTrue(arctype_to_ptype("SHORT ") is int)
+        self.assertTrue(arctype_to_ptype("TEXT") is str)
+        self.assertTrue(arctype_to_ptype("STRING") is str)
+        
+        self.assertTrue(arctype_to_ptype("SMALLINTEGER") is int)
+        self.assertTrue(arctype_to_ptype("LONG") is int)
+        self.assertTrue(arctype_to_ptype("INTEGER") is int)
+        self.assertTrue(arctype_to_ptype("DATE") is datetime.datetime)
+        self.assertTrue(arctype_to_ptype("DATETIME") is datetime.datetime)
+        self.assertTrue(arctype_to_ptype("FLOAT") is float)
+        self.assertTrue(arctype_to_ptype("SINGLE") is float)
+        self.assertTrue(arctype_to_ptype("DOUBLE") is float)
+        
+        self.assertTrue(arctype_to_ptype("") is str)
+        self.assertTrue(arctype_to_ptype(None) is str)
+        
+        with self.assertRaises(Exception):
+            arctype_to_ptype()
+        pass
 
 if __name__ == '__main__':
     unittest.main(verbosity = 2)
