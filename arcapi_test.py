@@ -651,5 +651,18 @@ class TestGlobalFunctions(unittest.TestCase):
             arctype_to_ptype()
         pass
 
+    def testproject_coordinates(self):
+        """Projecting list of coordinate pairs"""
+        dtt = 'TM65_To_WGS_1984_2 + OSGB_1936_To_WGS_1984_NGA_7PAR'
+        coordinates = [(240600.0, 375800.0), (245900.0, 372200.0)]
+        observed = project_coordinates(coordinates, 29902, 27700, dtt)
+        expected = [
+            (53444.10991363949, 539226.5651404626),
+            (58422.59724314464, 535183.1931399861)
+        ]
+        self.assertEqual(observed, expected)
+        pass
+        
+        
 if __name__ == '__main__':
     unittest.main(verbosity = 2)

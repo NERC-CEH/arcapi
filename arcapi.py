@@ -2726,7 +2726,45 @@ def arctype_to_ptype(tp):
     else:
         o = str
     return o
+
+def project_coordinates(xys, in_sr, out_sr, datum_transformation=None):
+    """Project list of coordinate pairs (or triplets).
+        xys -- list of coordinate pairs or triplets to project one by one
+        in_sr -- input spatial reference, wkid, prj file, etc.
+        out_sr -- output spatial reference, wkid, prj file, etc.
+        datum_transformation=None -- datum transformation to use
+            if in_sr and out_sr are defined on different datums, 
+            defining appropriate datum_transformation is necessary 
+            in order to obtain correct results!
+            (hint: use arcpy.ListTransformations to list valid transformations)
     
+    Example:
+    >>> dtt = 'TM65_To_WGS_1984_2 + OSGB_1936_To_WGS_1984_NGA_7PAR'
+    >>> coordinates = [(240600.0, 375800.0), (245900.0, 372200.0)]
+    >>> project_coordinates(coordinates, 29902, 27700, dtt)
+    """
+    
+    if not type(in_sr) is arcpy.SpatialReference:
+        in_sr = arcpy.SpatialReference(in_sr)
+    if not type(out_sr) is arcpy.SpatialReference:
+        out_sr = arcpy.SpatialReference(out_sr)
+    
+    xyspr = []
+    for xy in xys:
+        pt = arcpy.Point(*xy)
+        hasz = True if pt.Z is not None else False
+        ptgeo = arcpy.PointGeometry(pt, in_sr)
+        ptgeopr = ptgeo.projectAs(out_sr, datum_transformation)
+        ptpr = ptgeopr.firstPoint
+        if hasz:
+            xypr = (ptpr.X, ptpr.Y, ptpr.Z)
+        else:
+            xypr = (ptpr.X, ptpr.Y)
+        xyspr.append(xypr)
+    
+    return xyspr
+
+
 class ArcapiError(Exception):
     """A type of exception raised from arcapi module"""
     pass
