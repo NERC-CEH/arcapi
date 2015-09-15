@@ -25,6 +25,7 @@ import urllib2
 import json
 import urlparse
 from contextlib import closing
+import datetime
 
 try:
     import arcpy
@@ -33,7 +34,7 @@ except ImportError:
     arcpy = ArcpyMockup()
 
 
-__version__ = '0.2.9'
+__version__ = '0.3.0'
 """Version number of arcapi"""
 
 
@@ -117,8 +118,9 @@ def values(tbl, col, w='', o=None):
     if isinstance(col, (list, tuple)):
         cols = col
     else:
-        separ = ';' if ';' in str(col) else ','
-        cols = col.split(separ)
+        col = str(col)
+        separ = ';' if ';' in col else ','
+        cols = [c.strip() for c in col.split(separ)]
 
     # indicate whether one or more than one columns were specified
     multicols = False
@@ -129,9 +131,7 @@ def values(tbl, col, w='', o=None):
     if o is not None:
         o = 'ORDER BY ' + str(o)
     else:
-        oidname = getattr(arcpy.Describe(tbl), "OIDFieldName", None)
-        if oidname is not None:
-            o = 'ORDER BY ' + arcpy.AddFieldDelimiters(tbl, oidname) + ' ASC'
+        pass
 
     # retrieve values with search cursor
     ret = []
@@ -2694,6 +2694,74 @@ def epsg(epsgcode, form='esriwkt'):
     """
     srsstr = request('http://epsg.io/%s.%s' % (epsgcode, str(form).lower()))
     return srsstr
+
+
+def arctype_to_ptype(tp):
+    """Convert ArcGIS field type string to Python type.
+      tp -- ArcGIS type as string like SHORT|LONG|TEXT|DOUBLE|FLOAT...
+
+    Returns string for GUID, RASTER, BLOB, or other exotic types.
+
+    Example:
+    >>> arctype_to_ptype("SHORT") # returns int
+    >>> arctype_to_ptype("long") # returns int
+    >>> arctype_to_ptype("SmallInteger") # returns int
+    >>> arctype_to_ptype("DATE") # returns datetime.datetime
+    """
+    tp = str(tp).upper().strip()
+    o = str
+    if tp == "TEXT" or tp == "STRING":
+        o = str
+    elif tp == "SHORT" or tp == "SMALLINTEGER":
+        o = int
+    elif tp == "LONG" or tp == "INTEGER":
+        o = int
+    elif tp == "DATE" or tp == "DATETIME":
+        o = datetime.datetime
+    elif tp == "FLOAT" or tp == "SINGLE":
+        o = float
+    elif tp == "DOUBLE":
+        o = float
+    else:
+        o = str
+    return o
+
+def project_coordinates(xys, in_sr, out_sr, datum_transformation=None):
+    """Project list of coordinate pairs (or triplets).
+        xys -- list of coordinate pairs or triplets to project one by one
+        in_sr -- input spatial reference, wkid, prj file, etc.
+        out_sr -- output spatial reference, wkid, prj file, etc.
+        datum_transformation=None -- datum transformation to use
+            if in_sr and out_sr are defined on different datums,
+            defining appropriate datum_transformation is necessary
+            in order to obtain correct results!
+            (hint: use arcpy.ListTransformations to list valid transformations)
+
+    Example:
+    >>> dtt = 'TM65_To_WGS_1984_2 + OSGB_1936_To_WGS_1984_NGA_7PAR'
+    >>> coordinates = [(240600.0, 375800.0), (245900.0, 372200.0)]
+    >>> project_coordinates(coordinates, 29902, 27700, dtt)
+    """
+
+    if not type(in_sr) is arcpy.SpatialReference:
+        in_sr = arcpy.SpatialReference(in_sr)
+    if not type(out_sr) is arcpy.SpatialReference:
+        out_sr = arcpy.SpatialReference(out_sr)
+
+    xyspr = []
+    for xy in xys:
+        pt = arcpy.Point(*xy)
+        hasz = True if pt.Z is not None else False
+        ptgeo = arcpy.PointGeometry(pt, in_sr)
+        ptgeopr = ptgeo.projectAs(out_sr, datum_transformation)
+        ptpr = ptgeopr.firstPoint
+        if hasz:
+            xypr = (ptpr.X, ptpr.Y, ptpr.Z)
+        else:
+            xypr = (ptpr.X, ptpr.Y)
+        xyspr.append(xypr)
+
+    return xyspr
 
 
 class ArcapiError(Exception):
