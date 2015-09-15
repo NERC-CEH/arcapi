@@ -84,7 +84,8 @@ class TestGlobalFunctions(unittest.TestCase):
         vals2 = ap.values(fc, 'Shape_Length', w, 'Shape_Length ASC')
         vals3 = ap.values(fc, 'SHAPE@XY', w)
         vals4 = ap.values(fc, 'SHAPE@XY;Shape_Length', w, 'Shape_Length DESC')
-        est = all([len(vi) == 10 for vi in [vals1, vals2, vals3, vals4]])
+        vals5 = ap.values(fc, 'OBJECTID')[0:10]
+        est = all([len(vi) == 10 for vi in [vals1, vals2, vals3, vals4, vals5]])
         self.assertTrue(est)
 
     def testvalues_crosscolumns(self):
@@ -112,7 +113,7 @@ class TestGlobalFunctions(unittest.TestCase):
         obs = r'c:\temp\chart.jpg'
         t_fc = self.t_fc
         est = ap.chart(t_fc, obs, texts = {'txt': 'Element txt'}, openit=False)
-        self.assertEqual(est, obs)
+        self.assertEqual(str(est).lower(), str(obs).lower())
         pass
 
     def testplot(self):
@@ -626,43 +627,43 @@ class TestGlobalFunctions(unittest.TestCase):
         tp = '{http://www.opengis.net/gml/3.2}GeographicCRS'
 
         self.assertEqual(tg, tp)
-    
+
     def testarctype_to_ptype(self):
         """Converting from ArcGIS type strings to python types"""
-        self.assertTrue(arctype_to_ptype("SHORT") is int)
-        self.assertTrue(arctype_to_ptype("Short") is int)
-        self.assertTrue(arctype_to_ptype("SHORT ") is int)
-        self.assertTrue(arctype_to_ptype("TEXT") is str)
-        self.assertTrue(arctype_to_ptype("STRING") is str)
-        
-        self.assertTrue(arctype_to_ptype("SMALLINTEGER") is int)
-        self.assertTrue(arctype_to_ptype("LONG") is int)
-        self.assertTrue(arctype_to_ptype("INTEGER") is int)
-        self.assertTrue(arctype_to_ptype("DATE") is datetime.datetime)
-        self.assertTrue(arctype_to_ptype("DATETIME") is datetime.datetime)
-        self.assertTrue(arctype_to_ptype("FLOAT") is float)
-        self.assertTrue(arctype_to_ptype("SINGLE") is float)
-        self.assertTrue(arctype_to_ptype("DOUBLE") is float)
-        
-        self.assertTrue(arctype_to_ptype("") is str)
-        self.assertTrue(arctype_to_ptype(None) is str)
-        
+        self.assertTrue(ap.arctype_to_ptype("SHORT") is int)
+        self.assertTrue(ap.arctype_to_ptype("Short") is int)
+        self.assertTrue(ap.arctype_to_ptype("SHORT ") is int)
+        self.assertTrue(ap.arctype_to_ptype("TEXT") is str)
+        self.assertTrue(ap.arctype_to_ptype("STRING") is str)
+
+        self.assertTrue(ap.arctype_to_ptype("SMALLINTEGER") is int)
+        self.assertTrue(ap.arctype_to_ptype("LONG") is int)
+        self.assertTrue(ap.arctype_to_ptype("INTEGER") is int)
+        self.assertTrue(ap.arctype_to_ptype("DATE") is datetime.datetime)
+        self.assertTrue(ap.arctype_to_ptype("DATETIME") is datetime.datetime)
+        self.assertTrue(ap.arctype_to_ptype("FLOAT") is float)
+        self.assertTrue(ap.arctype_to_ptype("SINGLE") is float)
+        self.assertTrue(ap.arctype_to_ptype("DOUBLE") is float)
+
+        self.assertTrue(ap.arctype_to_ptype("") is str)
+        self.assertTrue(ap.arctype_to_ptype(None) is str)
+
         with self.assertRaises(Exception):
-            arctype_to_ptype()
+            ap.arctype_to_ptype()
         pass
 
     def testproject_coordinates(self):
         """Projecting list of coordinate pairs"""
         dtt = 'TM65_To_WGS_1984_2 + OSGB_1936_To_WGS_1984_NGA_7PAR'
         coordinates = [(240600.0, 375800.0), (245900.0, 372200.0)]
-        observed = project_coordinates(coordinates, 29902, 27700, dtt)
+        observed = ap.project_coordinates(coordinates, 29902, 27700, dtt)
         expected = [
             (53444.10991363949, 539226.5651404626),
             (58422.59724314464, 535183.1931399861)
         ]
         self.assertEqual(observed, expected)
         pass
-        
-        
+
+
 if __name__ == '__main__':
     unittest.main(verbosity = 2)
