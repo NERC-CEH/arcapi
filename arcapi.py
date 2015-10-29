@@ -254,7 +254,10 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
 
 
     hdr = delim.join(frmtd)
-    if verbose: print hdr # print header
+
+    if verbose:
+        print(hdr) # print header
+
     sbuilder.append(hdr)
     for r in x:
         frmtd = []
@@ -282,7 +285,7 @@ def print_tuples(x, delim=" ", tbl=None, geoms=None, fillchar=" ",  padding=1, v
 
 
         if verbose:
-            print rw # print row
+            print(rw) # print row
         sbuilder.append(rw)
 
 
@@ -352,7 +355,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
             toprint = l.ljust(longestLabel, ".") +  ": " + v
             arcpy.AddMessage(toprint)
             if verbose:
-                print toprint
+                print(toprint)
     else:
         if verbose:
             print_tuples(hd, delim=delimiter, tbl=flds, geoms=geoms, returnit=False)
@@ -404,7 +407,7 @@ def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution
         try:
             texel = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", tel)[0]
             texel.text = str(texts[tel])
-        except Exception, e:
+        except Exception as e:
             arcpy.AddMessage("Error when updating text element " + str(tel) + ": "+ str(e))
     arcpy.RefreshActiveView()
     arcpy.mapping.ExportToJPEG(mxd, out_file, resolution=resolution)
@@ -904,7 +907,7 @@ def docu(x, n = None):
     n = min(n, nrows)
     j = 0
     for i in dc:
-        print i
+        print(i)
         j += 1
         if j == n: break
     return
@@ -1125,7 +1128,7 @@ def list_environments(x=[], printit=False):
     for en in envs:
         env = getattr(arcpy.env, en)
         if printit:
-            print str(str(en) + " ").ljust(30, ".") + ": " + str(env)
+            print(str(str(en) + " ").ljust(30, ".") + ": " + str(env))
         ret.append((en, env))
     return ret
 
@@ -1519,30 +1522,30 @@ def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
         if verbose:
             width = 10
             fulline = '-' * 40
-            print fulline
-            print str(tbl)
-            print str(arcpy.Describe(tbl).catalogPath)
-            print fulline
+            print(fulline)
+            print(str(tbl))
+            print(str(arcpy.Describe(tbl).catalogPath))
+            print(fulline)
             for j,i in stats.iteritems():
                 mode = modes[j]
-                print 'COLUMN'.ljust(width) + ": " + str(i.get('col', None))
-                print 'type'.ljust(width) + ": "+ str(i.get('type', None))
+                print('COLUMN'.ljust(width) + ": " + str(i.get('col', None)))
+                print('type'.ljust(width) + ": "+ str(i.get('type', None)))
                 if mode == "NUM":
-                    print 'min'.ljust(width) + ": " + str(i.get('min', None))
-                    print 'max'.ljust(width) + ": " + str(i.get('max', None))
-                    print 'mean'.ljust(width) + ": " + str(i.get('mean', None))
-                    print 'sum'.ljust(width) + ": " + str(i.get('sum', None))
-                    print 'n'.ljust(width) + ": " + str(i.get('n', None))
-                    print 'na'.ljust(width) + ": " + str(i.get('na', None))
+                    print('min'.ljust(width) + ": " + str(i.get('min', None)))
+                    print('max'.ljust(width) + ": " + str(i.get('max', None)))
+                    print('mean'.ljust(width) + ": " + str(i.get('mean', None)))
+                    print('sum'.ljust(width) + ": " + str(i.get('sum', None)))
+                    print('n'.ljust(width) + ": " + str(i.get('n', None)))
+                    print('na'.ljust(width) + ": " + str(i.get('na', None)))
                 elif mode == "CAT":
                     cats = i["cats"]
                     if len(cats) > 0:
-                        print "CATEGORIES:"
+                        print("CATEGORIES:")
                         catable = sorted(zip(cats.keys(), cats.values()), key = lambda a: a[1], reverse = True)
                         print_tuples(catable)
                 else:
                     pass
-                print fulline
+                print(fulline)
     return stats
 
 
@@ -1850,7 +1853,7 @@ def list_all_fcs(gdb, wild = '*', ftype='All', rel=False):
     >>> # Return relative paths for fc
     >>> gdb = r'C:\TEMP\test.gdb'
     >>> for fc in getFCPaths(gdb, rel=True):
-    >>> print fc
+    >>> print(fc)
 
     Utilities\Storm_Mh
     Utilities\Storm_Cb
@@ -1968,7 +1971,7 @@ def get_field_type(in_field, fc=''):
     >>> # field type of 'String' needs to be 'TEXT' to be added to table
     >>> # This is a text type field
     >>> # now get esri field type
-    >>> print getFieldType(table, 'PARCEL_ID') #esri field.type return is 'String', we want 'TEXT'
+    >>> print(getFieldType(table, 'PARCEL_ID'))#esri field.type return is 'String', we want 'TEXT'
     TEXT
     """
     if fc:

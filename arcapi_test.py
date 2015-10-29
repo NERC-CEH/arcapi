@@ -264,8 +264,8 @@ class TestGlobalFunctions(unittest.TestCase):
         wc = '"OBJECTID" < 11'
         lr = arcpy.management.MakeFeatureLayer(self.t_fc, "lr", wc).getOutput(0)
         # TODO: test for deleting layers won't pass even though ap.dlt works
-        #print lr
-        #print arcpy.Exists(lr)
+        #print(lr)
+        #print(arcpy.Exists(lr))
         tempfc = 'in_memory\\tmp'
         if arcpy.Exists(tempfc):
             arcpy.Delete_management(tempfc)
