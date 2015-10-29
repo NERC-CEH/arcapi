@@ -48,7 +48,7 @@ def names(x, filterer = None):
     filterer -- function, only fields where filterer returns True are listed
 
     Example:
-    >>> names('c:\\foo\\bar.shp', lambda f: f.name.startswith('eggs'))
+    >>> names('c:/foo/bar.shp', lambda f: f.name.startswith('eggs'))
     """
     flds = arcpy.ListFields(x)
     if filterer is None: filterer = lambda a: True
@@ -65,7 +65,7 @@ def types(x, filterer = None):
     filterer -- function, only fields where filterer returns True are listed
 
     Example:
-    >>> types('c:\\foo\\bar.shp', lambda f: f.name.startswith('eggs'))
+    >>> types('c:/foo/bar.shp', lambda f: f.name.startswith('eggs'))
     """
     flds = arcpy.ListFields(x)
     if filterer is None: filterer = lambda a: True
@@ -79,7 +79,7 @@ def nrow(x):
     x -- input table or table view
 
     Example:
-    >>> nrow('c:\\foo\\bar.shp')
+    >>> nrow('c:/foo/bar.shp')
     """
     return int(arcpy.GetCount_management(x).getOutput(0))
 
@@ -107,11 +107,11 @@ def values(tbl, col, w='', o=None):
         default is None, which means order by object id if exists
 
     Example:
-    >>> values('c:\\foo\\bar.shp', 'Shape_Length')
-    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY')
-    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY;Shape_Length', 'Shape_Length ASC')
+    >>> values('c:/foo/bar.shp', 'Shape_Length')
+    >>> values('c:/foo/bar.shp', 'SHAPE@XY')
+    >>> values('c:/foo/bar.shp', 'SHAPE@XY;Shape_Length', 'Shape_Length ASC')
     >>> # columns in 'o' must be in 'col', otherwise RuntimeError is raised:
-    >>> values('c:\\foo\\bar.shp', 'SHAPE@XY', 'Shape_Length DESC') # Error!
+    >>> values('c:/foo/bar.shp', 'SHAPE@XY', 'Shape_Length DESC') # Error!
     """
 
     # unpack column names
@@ -155,7 +155,7 @@ def frequency(x):
 
     Example:
     >>> frequency([1,1,2,3,4,4,4]) # {1: 2, 2: 1, 3: 1, 4: 3}
-    >>> frequency(values('c:\\foo\\bar.shp', 'STATE'))
+    >>> frequency(values('c:/foo/bar.shp', 'STATE'))
     """
     x.sort()
     fq = {}
@@ -178,8 +178,8 @@ def distinct(tbl, col, w=''):
     w -- where clause
 
     Example:
-    >>> distinct('c:\\foo\\bar.shp', "CATEGORY")
-    >>> distinct('c:\\foo\\bar.shp', "SHAPE@XY")
+    >>> distinct('c:/foo/bar.shp', "CATEGORY")
+    >>> distinct('c:/foo/bar.shp', "SHAPE@XY")
     """
     return list(set(values(tbl, col, w)))
 
@@ -313,7 +313,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
 
 
     Example:
-    >>> tmp = head('c:\\foo\\bar.shp', 5, True, "|", " ")
+    >>> tmp = head('c:/foo/bar.shp', 5, True, "|", " ")
     """
     allcols = ['*', ['*'], ('*'), [], ()]
     colslower = [c.lower() for c in cols]
@@ -360,14 +360,14 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
         if verbose:
             print_tuples(hd, delim=delimiter, tbl=flds, geoms=geoms, returnit=False)
     return [hd, fs]
-def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution=95, openit=True):
+def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
     """Create and open a map (JPG) showing x and return path to the figure path.
 
     Required:
     x -- input feature class, raster dataset, or a layer
 
     Optional:
-    out_file -- path to output jpeg file, default is 'c:\\temp\\chart.jpg'
+    out_file -- path to output jpeg file, default is 'c:/temp/chart.jpg'
     texts -- dict of strings to include in text elements on the map (by name)
     template -- path to the .mxd to be used, default None points to mxd with
         a single text element called "txt"
@@ -375,8 +375,8 @@ def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution
     openit -- if True (default), exported jpg is opened in a webbrowser
 
     Example:
-    >>> chart('c:\\foo\\bar.shp')
-    >>> chart('c:\\foo\\bar.shp', texts = {'txt': 'A Map'}, resolution = 300)
+    >>> chart('c:/foo/bar.shp')
+    >>> chart('c:/foo/bar.shp', texts = {'txt': 'A Map'}, resolution = 300)
     """
     todel = []
     import re
@@ -425,7 +425,7 @@ def chart(x, out_file='c:\\temp\\chart.jpg', texts={}, template=None, resolution
     return arcpy.Describe(out_file).catalogPath
 
 
-def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X", ylab="Y", pch="+", color="r", openit=True):
+def plot(x, y=None, out_file="c:/temp/plot.png", main="Arcapi Plot", xlab="X", ylab="Y", pch="+", color="r", openit=True):
     """
     Create and display a plot (PNG) showing x (and y).
 
@@ -437,7 +437,7 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     Optional:
     y -- values to plot on y axis or None (default), then x will be plotted
         on y axis, using index for x axis.
-    out_file -- path to output file, default is 'c:\\temp\\plot.png'
+    out_file -- path to output file, default is 'c:/temp/plot.png'
     main -- title of the plot
     xlab -- label for x axis
     ylab -- label for y axis
@@ -454,9 +454,9 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     Example:
     >>> x = xrange(20)
     >>> plot(x)
-    >>> plot(x, out_file='c:\\temp\\pic.png')
+    >>> plot(x, out_file='c:/temp/pic.png')
     >>> y = xrange(50,70)
-    >>> plot(x, y, 'c:\\temp\\pic.png', 'Main', 'X [m]', 'Y [m]', 'o', 'k')
+    >>> plot(x, y, 'c:/temp/pic.png', 'Main', 'X [m]', 'Y [m]', 'o', 'k')
     """
     import re
     if not re.findall(".png", out_file, flags=re.IGNORECASE): out_file += ".png"
@@ -483,7 +483,7 @@ def plot(x, y=None, out_file="c:\\temp\\plot.png", main="Arcapi Plot", xlab="X",
     return
 
 
-def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
+def hist(x, out_file='c:/temp/hist.png', openit=True, **args):
     """
     Create and display a plot (PNG) showing histogram of x and return computed
     histogram of values, breaks, and patches.
@@ -513,7 +513,7 @@ def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
         shades of grey as '0.75', 3-tuple like (0.1, 0.9, 0.5) for (R, G, B).
         Can also be full color and style specification.
     label -- label for legend if x has multiple datasets
-    out_file -- path to output file, default is 'c:\\temp\\hist.png'
+    out_file -- path to output file, default is 'c:/temp/hist.png'
     main -- string, histogram main title
     xlab -- string, label for the ordinate (independent) axis
     openit -- if True (default), exported figure is opened in a webbrowser
@@ -552,7 +552,7 @@ def hist(x, out_file='c:\\temp\\hist.png', openit=True, **args):
     return h
 
 
-def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
+def bars(x, out_file='c:/temp/hist.png', openit=True, **args):
     """
     Create and display a plot (PNG) showing barchart of x.
 
@@ -579,7 +579,7 @@ def bars(x, out_file='c:\\temp\\hist.png', openit=True, **args):
     orientation -- 'vertical'(default)|'horizontal', orientation of the bars
     log -- boolean, set the axis to be log scale if True, default is False
     # other
-    out_file -- path to output file, default is 'c:\\temp\\hist.png'
+    out_file -- path to output file, default is 'c:/temp/hist.png'
     labels -- list-like of labels for each bar to display on x axis
     main -- string, histogram main title
     xlab -- string, label for the ordinate (independent) axis
@@ -661,7 +661,7 @@ def pie(x, y=None, **kwargs):
     y -- Groupping data - list of factor values, len(x) == len(y),
        values of x will be groupped by y and before the pie chart is plotted.
        If y is specified, labels will include the relevant y value.
-    out_file -- output file, default is 'c:\\temp\\hist.png'
+    out_file -- output file, default is 'c:/temp/hist.png'
     color -- scalar or array-like, the colors of the bar faces
     labels -- list-like of labels for each wedge, or None for default labels
     explode -- scalar or array like for offsetting wedges, default None (0.0)
@@ -686,7 +686,7 @@ def pie(x, y=None, **kwargs):
 
     # unpack arguments
     #y = kwargs.get('y', None) # more convenient to get as a named argument
-    out_file =kwargs.get('out_file', 'c:\\temp\\hist.png')
+    out_file =kwargs.get('out_file', 'c:/temp/hist.png')
     openit = kwargs.get('openit', True)
     #
     explode = kwargs.get('explode', None)
@@ -844,7 +844,7 @@ def tlist_to_table(x, out_tbl, cols, nullNumber=None, nullText=None):
 
     Example:
     >>> x = [(...),(...),(...),(...),(...), ...]
-    >>> ot = 'c:\\temp\\foo.dbf'
+    >>> ot = 'c:/temp/foo.dbf'
     >>> tlist_to_table(x, ot, [('IDO', 'SHORT'), ('NAME', 'TEXT', 200)]
     >>> tlist_to_table(x, ot, ['IDO:SHORT', 'NAME:TEXT:200']
     """
@@ -926,7 +926,7 @@ def meta(datasource, mode="PREPEND", **args):
     Abstract ("dataIdInfo/idAbs")
 
     This function exports metadata of the datasource to XML file using template
-    'Metadata\Stylesheets\gpTools\exact copy of.xslt' from ArcGIS installation
+    'Metadata/Stylesheets/gpTools/exact copy of.xslt' from ArcGIS installation
     directory. Then it loads the exported XML file into memory using Pythons
     xml.etree.ElementTree, modifies supported elements, writes a new XML file,
     and imports this new XML file as metadata to the datasource.
@@ -947,7 +947,7 @@ def meta(datasource, mode="PREPEND", **args):
         If no keyword argument is specifed, metadata are read only, not edited.
 
     Example:
-    >>> fc = 'c:\\foo\\bar.shp'
+    >>> fc = 'c:/foo/bar.shp'
     >>> meta(fc) # reads existing entries
     >>> meta(fc, 'OVERWRITE', title="Bar") # updates title
     >>> meta(fc, 'append', purpose='example', abstract='Column Spam means eggs')
@@ -959,7 +959,7 @@ def meta(datasource, mode="PREPEND", **args):
 
     # checks
     if xslt is None:
-        template = 'Metadata\Stylesheets\gpTools\exact copy of.xslt'
+        template = 'Metadata/Stylesheets/gpTools/exact copy of.xslt'
         arcdir = arcpy.GetInstallInfo()['InstallDir']
         xslt = os.path.join(arcdir, template)
     if not os.path.isfile(xslt):
@@ -1078,7 +1078,7 @@ def msg(x, timef='%Y-%m-%d %H:%M:%S', verbose=True, log=None, level='message'):
     Example:
     >>> msg('foo') # P:2014-02-16 20:44:35: foo
     >>> msg('foo', '%H%M%S') # P:204503: foo
-    >>> msg('foo', '%H%M%S', True, 'c:\\temp\\log.txt') # P:204531: foo
+    >>> msg('foo', '%H%M%S', True, 'c:/temp/log.txt') # P:204531: foo
     """
     x = str(x)
     level = str(level).lower()
@@ -1196,7 +1196,7 @@ def cleanup(x, verbose=False, **args):
     **args -- keyword arguments 'timef' and 'log' for function 'msg'
 
     Example:
-    >>> cleanup(['c:\\foo\\bar.shp', 'lyr', 'c:\\foo\\eggs.tif'])
+    >>> cleanup(['c:/foo/bar.shp', 'lyr', 'c:/foo/eggs.tif'])
     """
     cnt = 0
     for i in x:
@@ -1228,8 +1228,8 @@ def to_points(tbl, out_fc, xcol, ycol, sr, zcol='#', w=''):
     w -- where clause to limit the rows of tbl considered, default is ''
 
     Example:
-    >>> t = 'c:\\foo\\bar.shp'
-    >>> o = 'c:\\foo\\bar_pts.shp'
+    >>> t = 'c:/foo/bar.shp'
+    >>> o = 'c:/foo/bar_pts.shp'
     >>> table_to_points(t, o, "XC", "YC", 4326, zcol='#', w='"FID" < 10')
     >>> table_to_points(t, o, "XC", "YC", arcpy.SpatialReference(27700))
     >>> table_to_points(t, o, "XC", "YC", arcpy.describe(tbl).spatialReference)
@@ -1263,7 +1263,7 @@ def update_col_from_dict(x, y, xcol, xidcol=None, xw='', na=None):
         default is None, use (1,1) to leave original value if match is not found
 
     Example:
-    >>> fc = 'c:\\foo\\bar.shp'
+    >>> fc = 'c:/foo/bar.shp'
     >>> d = {1: 'EN', 2:'ST', 3:'WL', 4:'NI'}
     >>> update_col_from_dict(fc, d, 'country_code')
     >>> update_col_from_dict(fc, d, 'country_num', 'country_code', na='Other')
@@ -1331,11 +1331,11 @@ def to_scratch(name, enforce=False):
         exist in scratch workspace, otherwise returns basename equal to name.
 
     Example:
-    >>> to_scratch('foo', 0) # '...\\scratch.gdb\\foo'
-    >>> to_scratch('foo', 1) # '...\\scratch.gdb\\foo0'
-    >>> to_scratch('foo.shp', 0) # '...\\scratch.gdb\\foo_shp'
-    >>> to_scratch('foo.shp', 1) # '...\\scratch.gdb\\foo_shp0'
-    >>> tos('foo', 0) # '...\\scratch.gdb\\foo'
+    >>> to_scratch('foo', 0) # '.../scratch.gdb/foo'
+    >>> to_scratch('foo', 1) # '.../scratch.gdb/foo0'
+    >>> to_scratch('foo.shp', 0) # '.../scratch.gdb/foo_shp'
+    >>> to_scratch('foo.shp', 1) # '.../scratch.gdb/foo_shp0'
+    >>> tos('foo', 0) # '.../scratch.gdb/foo'
     """
     ws = arcpy.env.scratchWorkspace
     if ws is None: ws = arcpy.env.workspace
@@ -1369,8 +1369,8 @@ def wsp(ws = None):
     >>> # if executed in order
     >>> ev = arcpy.env
     >>> wsp() # sets ev.workspace = ec.scratchGDB if ev.workspace is None
-    >>> wsp('c:\\temp') # sets ev.workspace = 'c:\\temp', returns 'c:\\temp'
-    >>> wsp() # now returns 'c:\\temp'
+    >>> wsp('c:/temp') # sets ev.workspace = 'c:/temp', returns 'c:/temp'
+    >>> wsp() # now returns 'c:/temp'
     """
     if ws is None:
         ws = arcpy.env.workspace
@@ -1401,8 +1401,8 @@ def swsp(ws = None):
     >>> # if executed in order
     >>> ev = arcpy.env
     >>> swsp() # sets ev.scratchWorkspace = ec.scratchGDB if ev.scratchWorkspace is None
-    >>> swsp('c:\\temp') # sets ev.scratchWorkspace = 'c:\\temp', returns 'c:\\temp'
-    >>> swsp() # now returns 'c:\\temp'
+    >>> swsp('c:/temp') # sets ev.scratchWorkspace = 'c:/temp', returns 'c:/temp'
+    >>> swsp() # now returns 'c:/temp'
     """
     if ws is None:
         ws = arcpy.env.scratchWorkspace
@@ -1439,8 +1439,8 @@ def summary(tbl, cols=['*'], modes=None, maxcats=10, w='', verbose=True):
     verbose -- suppress printing if False, default is True
 
     Example:
-    >>> summary('c:\\foo\\bar.shp')
-    >>> summary('c:\\foo\\bar.shp', ['smap', 'eggs'], ['NUM', 'CAT'])
+    >>> summary('c:/foo/bar.shp')
+    >>> summary('c:/foo/bar.shp', ['smap', 'eggs'], ['NUM', 'CAT'])
     """
     cattypes = ('TEXT', 'STRING')
     numtypes = ('SHORT', 'SMALLINTEGER', 'LONG', 'INTEGER', 'DOUBLE', 'FLOAT')
@@ -1601,11 +1601,11 @@ def find(pattern, path, sub_dirs=True):
 
     Example:
     >>> # find SQL databases (.mdf files)
-    >>> find('*.mdf', r'\\ArcServer1\SDE')
-    \\arcserver1\SDE\ALBT\Albertville.mdf
-    \\arcserver1\SDE\ARLI\Arlington.mdf
-    \\arcserver1\SDE\BELL\BellePlaine.mdf
-    \\arcserver1\SDE\BGLK\BigLake.mdf
+    >>> find('*.mdf', r'/ArcServer1/SDE')
+    /arcserver1/SDE/ALBT/Albertville.mdf
+    /arcserver1/SDE/ARLI/Arlington.mdf
+    /arcserver1/SDE/BELL/BellePlaine.mdf
+    /arcserver1/SDE/BGLK/BigLake.mdf
     """
     import fnmatch
 
@@ -1632,7 +1632,7 @@ def int_to_float(raster, out_raster, decimals):
     decimals -- number of places to to move decimal for each cell
 
     Example:
-    >>> convertIntegerToFloat(r'C:\Temp\ndvi_int', r'C:\Temp\ndvi_float', 4)
+    >>> convertIntegerToFloat(r'C:/Temp/ndvi_int', r'C:/Temp/ndvi_float', 4)
     """
     try:
         import arcpy.sa as sa
@@ -1677,7 +1677,7 @@ def fill_no_data(in_raster, out_raster, w=5, h=5):
     h -- search radius height for focal stats (rectangle)
 
     Example:
-    >>> fill_no_data(r'C:\Temp\ndvi', r'C:\Temp\ndvi_filled', 10, 10)
+    >>> fill_no_data(r'C:/Temp/ndvi', r'C:/Temp/ndvi_filled', 10, 10)
     """
     try:
         import arcpy.sa as sa
@@ -1715,7 +1715,7 @@ def meters_to_feet(in_dem, out_raster, factor=3.28084):
         default is 3.28084 to convert metres to feet.
 
     Example:
-    >>> meters_to_feet(r'C:\Temp\dem_m', r'C:\Temp\dem_ft')
+    >>> meters_to_feet(r'C:/Temp/dem_m', r'C:/Temp/dem_ft')
     """
     try:
         import arcpy.sa as sa
@@ -1804,7 +1804,7 @@ def copy_schema(template, new, sr=''):
           is defined, it will default to sr of template.
 
     Example:
-    >>> copy_schema(r'C:\Temp\soils_city.shp', r'C:\Temp\soils_county.shp')
+    >>> copy_schema(r'C:/Temp/soils_city.shp', r'C:/Temp/soils_county.shp')
     """
     path, name = os.path.split(new)
     desc = arcpy.Describe(template)
@@ -1832,7 +1832,7 @@ def make_poly_from_extent(ext, sr):
     >>> ext = arcpy.Describe(fc).extent
     >>> sr = 4326  #WKID for WGS 84
     >>> poly = make_poly_from_extent(ext, sr)
-    >>> arcpy.CopyFeatures_management(poly, r'C:\Temp\Project_boundary.shp')
+    >>> arcpy.CopyFeatures_management(poly, r'C:/Temp/Project_boundary.shp')
     """
     array = arcpy.Array()
     array.add(ext.lowerLeft)
@@ -1851,13 +1851,13 @@ def list_all_fcs(gdb, wild = '*', ftype='All', rel=False):
     Relative path Example:
 
     >>> # Return relative paths for fc
-    >>> gdb = r'C:\TEMP\test.gdb'
+    >>> gdb = r'C:/TEMP/test.gdb'
     >>> for fc in getFCPaths(gdb, rel=True):
     >>> print(fc)
 
-    Utilities\Storm_Mh
-    Utilities\Storm_Cb
-    Transportation\Roads
+    Utilities/Storm_Mh
+    Utilities/Storm_Cb
+    Transportation/Roads
 
 
     Required:
@@ -1932,7 +1932,7 @@ def field_list(in_fc, filterer=[], oid=True, shape=True, objects=False):
               field.name, field.type, field.length, etc. (bool)
 
     Example:
-    >>> field_list(r'C:\Temp\Counties.shp', ['STATE_FIPS', 'COUNTY_CODE'], objects=True)
+    >>> field_list(r'C:/Temp/Counties.shp', ['STATE_FIPS', 'COUNTY_CODE'], objects=True)
     """
 
     # add exclude types and exclude fields
@@ -1996,7 +1996,7 @@ def match_field(table_or_list, pat, multi=False):
            otherwise returns the first match
 
     Example:
-    >>> match_field(r'C:\Temp\Counties.shp', 'county_*', True)
+    >>> match_field(r'C:/Temp/Counties.shp', 'county_*', True)
     ['COUNTY_CODE', 'COUNTY_FIPS']
     """
 
@@ -2052,7 +2052,7 @@ def create_field_name(fc, new_field):
     new_field -- new field name, will be altered if field already exists
 
     Example:
-    >>> fc = 'c:\\testing.gdb\\ne_110m_admin_0_countries'
+    >>> fc = 'c:/testing.gdb/ne_110m_admin_0_countries'
     >>> create_field_name(fc, 'NEWCOL') # NEWCOL
     >>> create_field_name(fc, 'Shape') # Shape_1
     """
@@ -2108,8 +2108,8 @@ def join_using_dict(source_table, in_field, join_table, join_key, join_values=[]
     join_values -- fields to add from join_table to source_table
 
     Example:
-    >>> parcels = r'C:\Temp\Parcels.gdb\Parcels'
-    >>> permits = r'C:\Temp\Parcels.gdb\Permits'
+    >>> parcels = r'C:/Temp/Parcels.gdb/Parcels'
+    >>> permits = r'C:/Temp/Parcels.gdb/Permits'
     >>> add_flds = ['PERMIT_NUM', 'PERMIT_DATE', 'NOTE']
     >>> join_using_dict(parcels, 'PIN', permits', 'PARCEL_ID', add_flds)
     """
@@ -2230,7 +2230,7 @@ def concatenate_fields(table, new_field, length, fields=[], delimiter='', number
         Default is False.
 
     Example:
-    >>> sec = r'C:\Temp\Sections.shp'
+    >>> sec = r'C:/Temp/Sections.shp'
     >>> concatenate_fields(sec, 'SEC_TWP_RNG', 15, ['SECTION', 'TOWNSHIP', 'RANGE'], '-')
     """
 
@@ -2283,10 +2283,10 @@ def list_data(top, **options):
             Skippers are not case sensitive
 
     Example:
-    >>> list_data(r'c:\temp')
+    >>> list_data(r'c:/temp')
     >>> skippers = (".txt", ".xls", ".ttf")
     >>> exclude = lambda a: "_expired2013" in a
-    >>> list_data(r'c:\temp', exclude=exclude, skippers=skippers)
+    >>> list_data(r'c:/temp', exclude=exclude, skippers=skippers)
     """
 
     exclude = options.get('exclude', None)
@@ -2345,8 +2345,8 @@ def create_pie_chart(fig, table, case_field, data_field='', fig_title='', x=8.5,
     rounding -- rounding for pie chart legend labels.  Default is 0.
 
     Example:
-    >>> wards = r'C:\Temp\Voting_Wards.shp'
-    >>> figure = r'C:\Temp\Figures\Election_results.png'
+    >>> wards = r'C:/Temp/Voting_Wards.shp'
+    >>> figure = r'C:/Temp/Figures/Election_results.png'
     >>> create_pie_chart(figure, wards, 'CANDIDATE', 'NUM_VOTES', 'Election Results')
     """
 
@@ -2379,7 +2379,7 @@ def create_pie_chart(fig, table, case_field, data_field='', fig_title='', x=8.5,
     vals=[]
 
     # sum values
-    sum_table = str(arcpy.Statistics_analysis(table, r'in_memory\sum_tab_xxx',
+    sum_table = str(arcpy.Statistics_analysis(table, r'in_memory/sum_tab_xxx',
                                               [[fields[1], 'SUM']],
                                               fields[0]).getOutput(0))
     fields[1] = 'SUM_{0}'.format(fields[1])
@@ -2431,15 +2431,15 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
 
     Example:
     >>> # test function with path
-    >>> out_pdf = r'C:\Users\calebma\Desktop\test.pdf'
-    >>> path = r'C:\Users\calebma\Desktop\pdfTest'
+    >>> out_pdf = r'C:/Users/calebma/Desktop/test.pdf'
+    >>> path = r'C:/Users/calebma/Desktop/pdfTest'
     >>> combine_pdfs(out_pdf, path)
 
     >>> # test function with list
-    >>> out = r'C:\Users\calebma\Desktop\test2.pdf'
-    >>> pdfs = [r'C:\Users\calebma\Desktop\pdfTest\Mailing_Labels5160.pdf',
-                r'C:\Users\calebma\Desktop\pdfTest\Mailing_Taxpayer.pdf',
-                r'C:\Users\calebma\Desktop\pdfTest\stfr.pdf']
+    >>> out = r'C:/Users/calebma/Desktop/test2.pdf'
+    >>> pdfs = [r'C:/Users/calebma/Desktop/pdfTest/Mailing_Labels5160.pdf',
+                r'C:/Users/calebma/Desktop/pdfTest/Mailing_Taxpayer.pdf',
+                r'C:/Users/calebma/Desktop/pdfTest/stfr.pdf']
     >>> combine_pdfs(out, pdfs)
     """
 
