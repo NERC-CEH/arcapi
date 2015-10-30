@@ -19,11 +19,22 @@
 import os
 import sys
 import time
-import httplib
 import urllib
-import urllib2
+
+try:
+    # Python 2.x
+    from urllib import urlencode
+    from httplib import HTTPConnection, HTTPSConnection
+    from urlparse import urlparse
+    from urllib2 import Request
+    from urllib2 import urlopen
+except ImportError:
+    # Python 3.x
+    from urllib.parse import urlparse, urlencode
+    from urllib.request import urlopen
+    from http.client import HTTPConnection, HTTPSConnection
+
 import json
-import urlparse
 from contextlib import closing
 import datetime
 
@@ -2508,7 +2519,7 @@ def request_http(url, data=None, data_type='text', headers={}):
         data['callback'] = callback
 
     if data is not None:
-         data = urllib.urlencode(data)
+         data = urlencode(data)
 
     # make the request
     rq = urllib2.Request(url, data, headers)
@@ -2571,7 +2582,7 @@ def request_https(url, data=None, data_type="text", headers={}):
     if not url.lower().startswith("https://"):
         url = "https://" + url
 
-    urlparsed = urlparse.urlparse(url)
+    urlparsed = urlparse(url)
     hostname = urlparsed.hostname
     path = url[8 + len(hostname):] # get path as url without https and host name
 
@@ -2593,7 +2604,7 @@ def request_https(url, data=None, data_type="text", headers={}):
                 raise Exception("data_type 'jsonp' not allowed for POST method!")
 
             # use POST request, data must be a dictionary and not part of the url
-            d = urllib.urlencode(data)
+            d = urlencode(data)
             cns.request("POST", path, d, headers)
 
         r = cns.getresponse()
