@@ -31,7 +31,7 @@ try:
 except ImportError:
     # Python 3.x
     from urllib.parse import urlparse, urlencode
-    from urllib.request import urlopen
+    from urllib.request import urlopen, Request
     from http.client import HTTPConnection, HTTPSConnection
 
 import json
@@ -371,6 +371,7 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
         if verbose:
             print_tuples(hd, delim=delimiter, tbl=flds, geoms=geoms, returnit=False)
     return [hd, fs]
+
 def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
     """Create and open a map (JPG) showing x and return path to the figure path.
 
@@ -463,10 +464,10 @@ def plot(x, y=None, out_file="c:/temp/plot.png", main="Arcapi Plot", xlab="X", y
     openit -- if True (default), exported figure is opened in a webbrowser
 
     Example:
-    >>> x = xrange(20)
+    >>> x = range(20)
     >>> plot(x)
     >>> plot(x, out_file='c:/temp/pic.png')
-    >>> y = xrange(50,70)
+    >>> y = list(range(50,70))
     >>> plot(x, y, 'c:/temp/pic.png', 'Main', 'X [m]', 'Y [m]', 'o', 'k')
     """
     import re
@@ -475,7 +476,7 @@ def plot(x, y=None, out_file="c:/temp/plot.png", main="Arcapi Plot", xlab="X", y
     if y is None:
         y = x
         len(x)
-        x = xrange(len(y))
+        x = range(len(y))
     lx = len(x)
     ly = len(y)
     if lx != ly:
@@ -538,7 +539,10 @@ def hist(x, out_file='c:/temp/hist.png', openit=True, **args):
 
     # sort out parameters
     extras =  ('main', 'xlab', 'ylab')
-    pars = dict([(k,v) for k,v in args.iteritems() if k not in extras])
+    pars = {}
+    for k in args:
+        if k not in extras:
+            pars.update({k: args[k]})
 
     h = plt.hist(x, **pars)
 
@@ -732,8 +736,8 @@ def pie(x, y=None, **kwargs):
                 freqs[yi] = xi
 
         x,y = [],[]
-        for k,v in freqs.iteritems():
-            x.append(v)
+        for k in freqs:
+            x.append(freqs.get(k))
             y.append(k)
         labels = y
 
@@ -1782,7 +1786,7 @@ def fixArgs(arg, arg_type=list):
         if isinstance(arg, str):
             # need to replace extra quotes for paths with spaces
             # or anything else that has a space in it
-            return map(lambda a: a.replace("';'",";"), arg.split(';'))
+            return list(map(lambda a: a.replace("';'",";"), arg.split(';')))
         else:
             return list(arg)
     if arg_type == float:
@@ -2456,8 +2460,11 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
 
     import glob
 
+    # Account for differences in ArcGIS for Desktop and ArcGIS Pro
+    mp = getattr(arcpy, "mapping", getattr(arcpy, 'mp', None))
+
     # Create new PDF document
-    pdfDoc = arcpy.mapping.PDFDocumentCreate(out_pdf)
+    pdfDoc = mp.PDFDocumentCreate(out_pdf)
 
     # if list, use that to combine pdfs
     if isinstance(pdf_path_or_list, list):
@@ -2522,8 +2529,8 @@ def request_http(url, data=None, data_type='text', headers={}):
          data = urlencode(data)
 
     # make the request
-    rq = urllib2.Request(url, data, headers)
-    re = urllib2.urlopen(rq)
+    rq = Request(url, data, headers)
+    re = urlopen(rq)
     rs = re.read()
 
     # handle result
@@ -2550,7 +2557,7 @@ def request_http(url, data=None, data_type='text', headers={}):
 
 def request_https(url, data=None, data_type="text", headers={}):
     """Return result of an HTTPS Request.
-    Uses urllib.HTTPSConnection to issue the request.
+    Uses HTTPSConnection to issue the request.
 
     Only GET and POST methods are supported. To issue a GET request, parameters
     must be encoded as part of the url and data must be None. To issue a POST
@@ -2587,7 +2594,7 @@ def request_https(url, data=None, data_type="text", headers={}):
     path = url[8 + len(hostname):] # get path as url without https and host name
 
     # connect to the host and issue the request
-    with closing(httplib.HTTPSConnection(hostname)) as cns:
+    with closing(HTTPSConnection(hostname)) as cns:
 
         if data is None:
 
@@ -2630,7 +2637,7 @@ def request_https(url, data=None, data_type="text", headers={}):
 def request(url, data=None, data_type='text', headers={}):
     """Return result of an HTTP or HTTPS Request.
 
-    Uses urllib2.Request to issue HTTP request and the urllib.HTTPSConnection
+    Uses urllib2.Request to issue HTTP request and the HTTPSConnection
     to issue https requests.
     Only GET and POST methods are supported. To issue a GET request, parameters
     must be encoded as part of the url and data must be None. To issue a POST

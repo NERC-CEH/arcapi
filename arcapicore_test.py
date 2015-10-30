@@ -117,9 +117,9 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testplot(self):
         pic = r'c:\temp\plot.png'
-        x = xrange(20)
+        x = range(20)
         ap.plot(x, out_file=pic, openit=False)
-        y = xrange(50,70)
+        y = range(50,70)
         ap.plot(x, y, pic, 'Main', 'X [m]', 'Y [m]', 'o', 'k', openit=False)
         os.remove(pic)
         with self.assertRaises(ap.ArcapiError):
@@ -128,7 +128,7 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testhist(self):
         pic = r'c:\temp\plot.png'
-        x = xrange(20)
+        x = list(range(20))
         h = ap.hist(x, out_file=pic, openit=False)
         h = ap.hist(x, pic, main='Main', xlab='Xlbl', log=True, openit=False)
         os.remove(pic)
@@ -136,9 +136,9 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testbars(self):
         pic = r'c:\temp\plot.png'
-        x = list(range(20))
+        x = range(20)
         ap.bars(x, out_file=pic, openit=False)
-        y = list(range(50,70))
+        y = range(50,70)
         ap.bars(x, out_file=pic, labels=y, main='Main', xlab='X', ylab='Y', openit=False)
         ap.bars([], openit=False)
         os.remove(pic)
@@ -232,7 +232,7 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testlist_environments(self):
         envs = ap.list_environments([])
-        self.assertEqual(len(envs), 50)
+        self.assertTrue(len(envs) in (44, 50))
         pass
 
     def testoidF(self):
@@ -384,7 +384,8 @@ class TestGlobalFunctions(unittest.TestCase):
         est = []
         findings = ap.find('*.shp', self.testingfolder)
         est.append(len(findings))
-        findings = ap.find('*110m*', self.testingfolder)
+        flst = ap.find('*110m*', self.testingfolder)
+        findings = [i for i in flst if not i.endswith('.lock')]
         est.append(len(findings))
         self.assertEqual(est, obs)
 
