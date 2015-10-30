@@ -52,5 +52,5 @@
 #-------------------------------------------------------------------------------
 """
 
-from arcapi import *
+from arcapicore import *
 from custom import *

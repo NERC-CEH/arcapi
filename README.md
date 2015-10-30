@@ -26,9 +26,9 @@ If you do not want to put it into your python path, then:
 
 Resources
 ---------
-- Read [tutorial](https://github.com/NERC-CEH/arcapi/blob/master/arcapi_tutorial.py) to get a glimpse of what arcapi is about.
-- Each function in arcapi has a decent docstring, more examples are in [arcapi_test.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapi_test.py).
-- Read the header of [arcapi.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapi.py).
+- Read [tutorial](https://github.com/NERC-CEH/arcapi/blob/master/tutorial.py) to get a glimpse of what arcapi is about.
+- Each function in arcapi has a decent docstring, more examples are in [arcapicore_test.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapicore_test.py).
+- Read the header of [arcapicore.py](https://github.com/NERC-CEH/arcapi/blob/master/arcapicore.py).
 - List all functions and their documentation: `help(arcapi)`
 - [Esri GeoNet arcapi Group](https://geonet.esri.com/groups/arcapi) and a [forum thread](https://geonet.esri.com/thread/89307)
 
@@ -43,7 +43,7 @@ Some functions require Spatial Analyst Extension in order to be fully functional
 
 Tests
 -----
-Tests for arcapi.py are in arapi_tests.py, testing data in ./testing folder.
+Tests for arcapicore.py are in arapicore_tests.py, testing data in ./testing folder.
 Everybody is encouraged to write more and better tests.
 
 
