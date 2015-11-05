@@ -572,14 +572,15 @@ class TestGlobalFunctions(unittest.TestCase):
     def testcombine_pdfs(self):
         _dir = os.path.dirname(self.testingfolder)
         mapDoc = os.path.join(_dir, 'chart.mxd')
-        mxd = arcpy.mapping.MapDocument(mapDoc)
-        txt_elm = [elm for elm in arcpy.mapping.ListLayoutElements(mxd, 'TEXT_ELEMENT')
+        mp = getattr(arcpy, "mapping", getattr(arcpy, 'mp', None))
+        mxd = mp.MapDocument(mapDoc)
+        txt_elm = [elm for elm in mp.ListLayoutElements(mxd, 'TEXT_ELEMENT')
                    if elm.text == 'SomeText'][0]
         del_list = []
         for i in range(3):
             txt_elm.text = "Hi, I'm page {0}".format(i)
             pdf = os.path.join(_dir, 'test_{0}.pdf'.format(i))
-            arcpy.mapping.ExportToPDF(mxd, pdf, resolution=100)
+            mp.ExportToPDF(mxd, pdf, resolution=100)
             del_list.append(pdf)
         combined = os.path.join(_dir, 'combined.pdf')
         del mxd

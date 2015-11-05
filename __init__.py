@@ -52,5 +52,5 @@
 #-------------------------------------------------------------------------------
 """
 
-from arcapicore import *
-from custom import *
+from .arcapicore import *
+from .custom import *

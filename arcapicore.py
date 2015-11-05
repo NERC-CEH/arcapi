@@ -2469,7 +2469,7 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
     if isinstance(pdf_path_or_list, list):
         for pdf in pdf_path_or_list:
             pdfDoc.appendPages(pdf)
-            msg('Added "%s" to "%s"' %(pdf, os.path.basename(out_pdf)))
+            msg('Added "{0}" to "{1}"'.format(pdf, os.path.basename(out_pdf)))
 
     # search path to find pdfs
     elif isinstance(pdf_path_or_list, str):
@@ -2477,12 +2477,12 @@ def combine_pdfs(out_pdf, pdf_path_or_list, wildcard=''):
             search = os.path.join(pdf_path_or_list,'{0}*.pdf'.format(wildcard))
             for pdf in sorted(glob.glob(search)):
                 pdfDoc.appendPages(os.path.join(pdf_path_or_list, pdf))
-                msg('Added "%s" to "%s"' %(pdf, os.path.basename(out_pdf)))
+                msg('Added "{0}" to "{1}"'.format(pdf, os.path.basename(out_pdf)))
 
     # Save and close pdf document
     pdfDoc.saveAndClose()
     del pdfDoc
-    msg('Created: %s' %out_pdf)
+    msg('Created: {0}'.format(out_pdf))
     return out_pdf
 
 
