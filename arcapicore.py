@@ -19,7 +19,6 @@
 import os
 import sys
 import time
-import urllib
 
 try:
     # Python 2.x
@@ -2527,6 +2526,7 @@ def request_http(url, data=None, data_type='text', headers={}):
 
     if data is not None:
          data = urlencode(data)
+         data = bytes(data.encode("utf-8"))
 
     # make the request
     rq = Request(url, data, headers)
@@ -2536,6 +2536,7 @@ def request_http(url, data=None, data_type='text', headers={}):
     # handle result
     if data_type in ('json', 'jsonp', 'pjson'):
         rs = rs.strip()
+        rs = rs.decode("utf-8")
 
         # strip callback function if present
         if rs.startswith(callback + '('):
@@ -2546,6 +2547,7 @@ def request_http(url, data=None, data_type='text', headers={}):
     elif data_type == 'xml':
         from xml.etree import ElementTree as ET
         rs = rs.strip()
+        rs = rs.decode("utf-8")
         result = ET.fromstring(rs)
     elif data_type == 'text':
         result = rs
@@ -2612,10 +2614,12 @@ def request_https(url, data=None, data_type="text", headers={}):
 
             # use POST request, data must be a dictionary and not part of the url
             d = urlencode(data)
+            d = bytes(d.encode("utf-8"))
             cns.request("POST", path, d, headers)
 
         r = cns.getresponse()
         s = r.read()
+        s = s.decode("utf-8")
         cns.close()
 
     # convert to required format
