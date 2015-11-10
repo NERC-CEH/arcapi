@@ -371,8 +371,114 @@ def head(tbl, n=10, t=True, delimiter="; ", geoms=None, cols=["*"], w="", verbos
             print_tuples(hd, delim=delimiter, tbl=flds, geoms=geoms, returnit=False)
     return [hd, fs]
 
-def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
+
+def chart_py3(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
     """Create and open a map (JPG) showing x and return path to the figure path.
+
+    This function uses arcpy.mp package available in Python 3.x with ArcGIS Pro.
+
+    This function works only sometimes!!! Needs isolating and fixing!!!
+
+    Required:
+    x -- input feature class, raster dataset, or a layer
+
+    Optional:
+    out_file -- path to output jpeg file, default is 'c:/temp/chart.jpg'
+    texts -- dict of strings to include in text elements on the map (by name)
+
+    resolution -- output resolution in DPI (dots per inch)
+    openit -- if True (default), exported jpg is opened in a webbrowser
+
+
+    template -- path to the ArcGIS project .aprx to be used, default None points
+        project with a single text element called "txt", a single map,
+        a single map frame and a single layout object.
+        The template parameter is kept for api consistency but changing it is
+        not recommended in this version because of assumption that the project
+        contains a sinlge map, single map frame, and single layout.
+
+
+    Example:
+    >>> chart('c:/foo/bar.shp')
+    >>> chart('c:/foo/bar.shp', texts = {'txt': 'A Map'}, resolution = 300)
+    """
+    mp = getattr(arcpy, "mapping", getattr(arcpy, 'mp', None))
+    ##import arcpy
+    ##x=r'C:\Users\filkra\Documents\GitHub\arcapi\testing\testing_files\ne_110m_cultural\ne_110m_admin_0_countries.shp'
+    ##x=r'c:\temp\ea_river_habitat_surveys.shp'
+    ##template = r'C:\Users\filkra\Documents\GitHub\arcapi\pro\arcproproject\arcproproject.aprx'
+    ##out_file='c:/temp/charta.jpg'
+    ##resolution =95
+    todel = []
+    import re
+    if template is None:
+        template = os.path.join(os.path.dirname(os.path.realpath(__file__)), r'pro\arcproproject\arcproproject.aprx')
+
+    if not re.findall(".aprx", template, flags=re.IGNORECASE): template += ".aprx"
+    if not re.findall(".jpe?g", out_file, flags=re.IGNORECASE): out_file += ".jpg"
+
+    prjct = mp.ArcGISProject(template)
+    if not arcpy.Exists(x):
+        x = arcpy.management.CopyFeatures(x, arcpy.CreateScratchName('tmp', workspace = 'in_memory')).getOutput(0)
+        todel = [x]
+    dtype = arcpy.Describe(x).dataType
+
+    layout = prjct.listLayouts()[0]
+    mframe = layout.listElements("MAPFRAME_ELEMENT")[0]
+    prmap = mframe.map
+
+    lr = "chart" + tstamp(tf = "%H%M%S")
+    if arcpy.Exists(lr) and arcpy.Describe(lr).dataType in ('FeatureLayer', 'RasterLayer'):
+        arcpy.Delete_management(lr)
+
+    if "raster" in dtype.lower():
+        lr = arcpy.MakeRasterLayer_management(x, lr).getOutput(0)
+    else:
+        lr = arcpy.MakeFeatureLayer_management(x, lr).getOutput(0)
+
+    # try to update text elements if any requested:
+    for k in texts:
+        tel = texts[k]
+        try:
+            texel = layout.listElements("TEXT_ELEMENT", tel)[0]
+            texel.text = str(texts[tel])
+        except Exception as e:
+            arcpy.AddMessage("Error when updating text element " + str(tel) + ": "+ str(e))
+
+    # add layer and zoom to layer extent
+    prmap.addLayer(lr)
+    camera = mframe.camera
+    sr = camera.getExtent().spatialReference
+    lrex = arcpy.Describe(lr).extent
+    if sr.factoryCode != lrex.spatialReference.factoryCode:
+        lrex = lrex.projectAs(sr)
+    camera.setExtent(lrex)
+
+    layout.exportToJPEG(out_file, resolution=resolution)
+
+    # cleanup
+    arcpy.Delete_management(lr)
+    del lr
+    del layout
+    del prmap
+    del prjct
+
+    if todel:
+        for i in todel:
+            arcpy.Delete_management(i)
+
+    # open the chart in a browser if requested
+    if openit:
+        import webbrowser
+        webbrowser.open_new_tab(out_file)
+
+    return arcpy.Describe(out_file).catalogPath
+
+
+def chart_py2(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
+    """Create and open a map (JPG) showing x and return path to the figure path.
+
+    This function works with the arcpy.mapping module in Python 2.x.
 
     Required:
     x -- input feature class, raster dataset, or a layer
@@ -414,7 +520,8 @@ def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=9
     arcpy.mapping.AddLayer(df, lyr)
 
     # try to update text elements if any requested:
-    for tel in texts.iterkeys():
+    for k in texts:
+        tel = text[k]
         try:
             texel = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", tel)[0]
             texel.text = str(texts[tel])
@@ -434,6 +541,35 @@ def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=9
         webbrowser.open_new_tab(out_file)
 
     return arcpy.Describe(out_file).catalogPath
+
+
+def chart(x, out_file='c:/temp/chart.jpg', texts={}, template=None, resolution=95, openit=True):
+    """Create and open a map (JPG) showing x and return path to the figure path.
+
+    This function works differently in Python 2.x and Python 3.x,
+    see chart_py2 and chat_py3 for details.
+
+    Required:
+    x -- input feature class, raster dataset, or a layer
+
+    Optional:
+    out_file -- path to output jpeg file, default is 'c:/temp/chart.jpg'
+    texts -- dict of strings to include in text elements on the map (by name)
+    template -- path to the .mxd to be used, default None points to mxd with
+        a single text element called "txt"
+    resolution -- output resolution in DPI (dots per inch)
+    openit -- if True (default), exported jpg is opened in a webbrowser
+
+    Example:
+    >>> chart('c:/foo/bar.shp')
+    >>> chart('c:/foo/bar.shp', texts = {'txt': 'A Map'}, resolution = 300)
+    """
+    if hasattr(arcpy, "mapping"):
+        return chart_py2(x, out_file, texts, template, resolution, openit)
+    elif hasattr(arcpy, 'mp'):
+        return chart_py3(x, out_file, texts, template, resolution, openit)
+    else:
+        raise ArcapiError("No mapping or mp module found.")
 
 
 def plot(x, y=None, out_file="c:/temp/plot.png", main="Arcapi Plot", xlab="X", ylab="Y", pch="+", color="r", openit=True):
