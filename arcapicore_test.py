@@ -86,6 +86,7 @@ class TestGlobalFunctions(unittest.TestCase):
         vals5 = ap.values(fc, 'OBJECTID')[0:10]
         est = all([len(vi) == 10 for vi in [vals1, vals2, vals3, vals4, vals5]])
         self.assertTrue(est)
+        pass
 
     def testvalues_crosscolumns(self):
         # the values function requires columns included in the o parameter
@@ -232,7 +233,7 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def testlist_environments(self):
         envs = ap.list_environments([])
-        self.assertTrue(len(envs) in (44, 50))
+        self.assertTrue(len(envs) in (44, 50, 55))
         pass
 
     def testoidF(self):
@@ -601,11 +602,13 @@ class TestGlobalFunctions(unittest.TestCase):
         datas = str("".join(data))
         all_in = all([(ei in datas) for ei in expected])
         self.assertTrue(all_in)
+        pass
 
     def testrequest_text(self):
         """Basic test to get a page as text"""
         d = ap.request('http://google.com')
         self.assertNotEqual(d, '')
+        pass
 
     def testrequest_json(self):
         """Get json from arcgis sampleserver"""
@@ -636,7 +639,7 @@ class TestGlobalFunctions(unittest.TestCase):
         self.assertTrue(ap.arctype_to_ptype("SHORT ") is int)
         self.assertTrue(ap.arctype_to_ptype("TEXT") is str)
         self.assertTrue(ap.arctype_to_ptype("STRING") is str)
-
+        
         self.assertTrue(ap.arctype_to_ptype("SMALLINTEGER") is int)
         self.assertTrue(ap.arctype_to_ptype("LONG") is int)
         self.assertTrue(ap.arctype_to_ptype("INTEGER") is int)

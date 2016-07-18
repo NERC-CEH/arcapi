@@ -34,7 +34,7 @@
 # Package structure
 # -----------------
 # Arcapi is a Python package which allows for modular structure. The core
-# module is called aracpi and all its content is imported when you import
+# module is called arcapi and all its content is imported when you import
 # the arcapi package.
 # Another module is called custom. All content of the custom module gets
 # imported when you import the arcapi package, but the custom module is

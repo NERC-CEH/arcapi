@@ -2853,16 +2853,16 @@ def epsg(epsgcode, form='esriwkt'):
     Example:
     >>> srs_str_by_epsg(27700, 'esriwkt')
     """
-    srsstr = request('http://epsg.io/%s.%s' % (epsgcode, str(form).lower()))
+    srsstr = request('http://epsg.io/{0}.{1}'.format(epsgcode, str(form).lower()))
     return srsstr
 
 
 def arctype_to_ptype(tp):
     """Convert ArcGIS field type string to Python type.
-      tp -- ArcGIS type as string like SHORT|LONG|TEXT|DOUBLE|FLOAT...
-
+    tp -- ArcGIS type as string like SHORT|LONG|TEXT|DOUBLE|FLOAT...
+    
     Returns string for GUID, RASTER, BLOB, or other exotic types.
-
+    
     Example:
     >>> arctype_to_ptype("SHORT") # returns int
     >>> arctype_to_ptype("long") # returns int
@@ -2887,8 +2887,11 @@ def arctype_to_ptype(tp):
         o = str
     return o
 
+
 def project_coordinates(xys, in_sr, out_sr, datum_transformation=None):
     """Project list of coordinate pairs (or triplets).
+    
+    Parameters:
         xys -- list of coordinate pairs or triplets to project one by one
         in_sr -- input spatial reference, wkid, prj file, etc.
         out_sr -- output spatial reference, wkid, prj file, etc.
