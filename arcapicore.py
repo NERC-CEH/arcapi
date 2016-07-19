@@ -1323,9 +1323,10 @@ def dlt(x):
     """arcpy.Delete_management(x) if arcpy.Exists(x).
 
     Return False if x does not exist, True if x exists and was deleted.
+    If x is None, does nothing and returns False.
     """
     deletted = False
-    if arcpy.Exists(x):
+    if x is not None and arcpy.Exists(x):
         arcpy.Delete_management(x)
         deletted = True
     return deletted
@@ -1389,10 +1390,10 @@ def to_points(tbl, out_fc, xcol, ycol, sr, zcol='#', w=''):
         sr = arcpy.SpatialReference(sr)
     lr = arcpy.MakeXYEventLayer_management(tbl, xcol, ycol, lrnm, sr, zcol).getOutput(0)
     if str(w) not in ('', '*'):
-        arcpy.SelectLayerByAttribute_management(lr, "NEW_SELECTION", w)
-    out_fc = arcpy.CopyFeatures_management(lr, out_fc).getOutput(0)
-    dlt(lr)
-    return (arcpy.Describe(out_fc).catalogPath)
+        lr = arcpy.SelectLayerByAttribute_management(lr.name, "NEW_SELECTION", w).getOutput(0)
+    out_fc = arcpy.CopyFeatures_management(lr.name, out_fc).getOutput(0)
+    dlt(lr.name)
+    return arcpy.Describe(out_fc).catalogPath
 
 
 def update_col_from_dict(x, y, xcol, xidcol=None, xw='', na=None):
@@ -2860,9 +2861,9 @@ def epsg(epsgcode, form='esriwkt'):
 def arctype_to_ptype(tp):
     """Convert ArcGIS field type string to Python type.
     tp -- ArcGIS type as string like SHORT|LONG|TEXT|DOUBLE|FLOAT...
-    
+
     Returns string for GUID, RASTER, BLOB, or other exotic types.
-    
+
     Example:
     >>> arctype_to_ptype("SHORT") # returns int
     >>> arctype_to_ptype("long") # returns int
@@ -2890,7 +2891,7 @@ def arctype_to_ptype(tp):
 
 def project_coordinates(xys, in_sr, out_sr, datum_transformation=None):
     """Project list of coordinate pairs (or triplets).
-    
+
     Parameters:
         xys -- list of coordinate pairs or triplets to project one by one
         in_sr -- input spatial reference, wkid, prj file, etc.
